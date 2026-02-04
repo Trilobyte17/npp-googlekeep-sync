@@ -1,0 +1,55 @@
+name: Build ARM64 Plugin
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [created]
+
+jobs:
+  build-arm64:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup ARM64 Build Tools
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: amd64_arm64
+        
+    - name: Configure CMake
+      run: |
+        mkdir build
+        cd build
+        cmake -A ARM64 .. -DCMAKE_BUILD_TYPE=Release
+        
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GoogleKeepSync-arm64
+        path: build/bin/Release/GoogleKeepSync.dll
+        
+    - name: Create Release Package
+      if: github.event_name == 'release'
+      run: |
+        mkdir package
+        copy build\bin\Release\GoogleKeepSync.dll package\
+        copy README.md package\
+        7z a GoogleKeepSync-arm64-${GITHUB_REF_NAME}.zip .\package\*
+        
+    - name: Upload to Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: GoogleKeepSync-arm64-*.zip

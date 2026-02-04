@@ -1,0 +1,76 @@
+// Resource file for Google Keep Sync Plugin
+
+#include <windows.h>
+#include "resource.h"
+
+// Version information
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+FILEFLAGS 0x1L
+#else
+FILEFLAGS 0x0L
+#endif
+FILEOS 0x40004L
+FILETYPE 0x2L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Notepad++ Plugin"
+            VALUE "FileDescription", "Google Keep Sync Plugin for Notepad++"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "GoogleKeepSync.dll"
+            VALUE "LegalCopyright", "Copyright (C) 2025"
+            VALUE "OriginalFilename", "GoogleKeepSync.dll"
+            VALUE "ProductName", "Google Keep Sync Plugin"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+// Configuration Dialog
+IDD_CONFIG_DIALOG DIALOGEX 0, 0, 400, 300
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Google Keep Sync Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    // OAuth Section
+    GROUPBOX        "Google OAuth Credentials",IDC_STATIC,7,7,386,90
+    LTEXT           "Client ID:",IDC_STATIC,17,25,50,8
+    EDITTEXT        IDC_EDIT_CLIENT_ID,70,22,313,14,ES_AUTOHSCROLL
+    LTEXT           "Client Secret:",IDC_STATIC,17,45,50,8
+    EDITTEXT        IDC_EDIT_CLIENT_SECRET,70,42,313,14,ES_PASSWORD | ES_AUTOHSCROLL
+    PUSHBUTTON      "Authenticate",IDC_BUTTON_AUTHENTICATE,250,65,133,17
+    
+    // Sync Settings Section
+    GROUPBOX        "Sync Settings",IDC_STATIC,7,100,386,100
+    CONTROL         "Enable Auto-Sync on Save",IDC_CHECK_AUTOSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,118,150,10
+    CONTROL         "Include file metadata in notes",IDC_CHECK_SYNC_METADATA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,135,150,10
+    
+    // Exclusions Section
+    LTEXT           "Excluded File Extensions:",IDC_STATIC,17,150,120,8
+    LISTBOX         IDC_LIST_EXCLUSIONS,17,162,150,35,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_EDIT_EXCLUSION,17,200,100,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Add",IDC_BUTTON_ADD_EXCL,122,200,45,14
+    PUSHBUTTON      "Remove",IDC_BUTTON_REMOVE_EXCL,17,218,60,14
+    
+    // Status
+    LTEXT           "Status:",IDC_STATIC,17,225,30,8
+    LTEXT           "Ready",IDC_STATUS_TEXT,50,225,333,20
+    
+    // Buttons
+    DEFPUSHBUTTON   "OK",IDOK,250,270,70,14
+    PUSHBUTTON      "Cancel",IDCANCEL,325,270,70,14
+END
+
+// Icon
+100 ICON "icon.ico"
