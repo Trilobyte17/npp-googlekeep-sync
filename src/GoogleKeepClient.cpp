@@ -36,7 +36,7 @@ std::string GoogleKeepClient::BuildCreateNoteRequest(const std::wstring& title,
     std::wostringstream json;
     json << L"{";
     json << L"\"title\":\"" << EscapeJsonString(title) << L"\",";
-    json << L"\"body\":[{":" << L"\"text\":\"" << EscapeJsonString(content) << L"\"}";
+    json << L"\"body\":{\"text\":\"" << EscapeJsonString(content) << L"\"}";
     json << L"]}";
     
     // Add labels if any
@@ -61,8 +61,7 @@ std::string GoogleKeepClient::BuildUpdateNoteRequest(const std::wstring& title,
     std::wostringstream json;
     json << L"{";
     json << L"\"title\":\"" << EscapeJsonString(title) << L"\",";
-    json << L"\"body\":[{":" << L"\"text\":\"" << EscapeJsonString(content) << L"\"}";
-    json << L"]}";
+    json << L"\"body\":{\"text\":\"" << EscapeJsonString(content) << L"\"}";
     json << L"}";
     
     std::wstring ws = json.str();

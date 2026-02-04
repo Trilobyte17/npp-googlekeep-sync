@@ -100,45 +100,10 @@ private:
 
 // DLL Export Functions
 extern "C" {
-    BOOL __declspec(dllexport) isUnicode();
-    CONST WCHAR* __declspec(dllexport) getName();
-    VOID __declspec(dllexport) setInfo(NppData notepadPlusData);
-    CONST WCHAR* __declspec(dllexport) getFuncsArray(INT* nbF);
-    BOOL __declspec(dllexport) messageProc(UINT msg, WPARAM wParam, LPARAM lParam);
-    LONGLONG __declspec(dllexport) beNotificationProc(SCNotification* notifyCode);
+    BOOL APIENTRY isUnicode();
+    CONST WCHAR* APIENTRY getName();
+    VOID APIENTRY setInfo(NppData notepadPlusData);
+    CONST WCHAR* APIENTRY getFuncsArray(INT* nbF);
+    BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam);
+    LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode);
 }
-
-struct NppData {
-    HWND _nppHandle;
-    HWND _scintillaMainHandle;
-    HWND _scintillaSecondHandle;
-};
-
-struct SCNotification {
-    struct Sci_NotifyHeader {
-        void* hwndFrom;
-        UINT_PTR idFrom;
-        UINT code;
-    } nmhdr;
-    int position;
-    int ch;
-    int modifiers;
-    int modificationType;
-    const char* text;
-    int length;
-    int linesAdded;
-    int message;
-    UINT_PTR wParam;
-    LONG_PTR lParam;
-    int line;
-    int foldLevelNow;
-    int foldLevelPrev;
-    int margin;
-    int listType;
-    int x;
-    int y;
-    int token;
-    int annotationLinesAdded;
-    int updated;
-    int listCompletionMethod;
-};

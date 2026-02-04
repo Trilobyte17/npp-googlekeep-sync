@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <shlobj.h>
+#include <iomanip>
 
 #pragma comment(lib, "shell32.lib")
 

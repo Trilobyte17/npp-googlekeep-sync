@@ -9,7 +9,7 @@ set(CMAKE_SYSTEM_PROCESSOR ARM64)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# MSVC ARM64 compiler settings
+# MSVC compiler settings
 if(MSVC)
     add_compile_options(
         /W4
@@ -17,14 +17,8 @@ if(MSVC)
         /EHsc
         /Zc:__cplusplus
         /permissive-
-        /MP             # Multi-processor compilation
+        /MP
     )
-    
-    # ARM64 specific
-    if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_VS_PLATFORM_NAME STREQUAL "ARM64")
-        message(STATUS "Building for ARM64 Windows")
-        add_compile_options(/favor:ARM64)
-    endif()
 endif()
 
 # Source files
@@ -48,10 +42,31 @@ set(HEADERS
 # Create DLL
 add_library(GoogleKeepSync SHARED ${SOURCES} ${HEADERS})
 
+# Notepad++ SDK - Auto-download if not present
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/Notepad_plus/include/PluginInterface.h")
+    message(STATUS "Downloading Notepad++ SDK...")
+    file(DOWNLOAD 
+        "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/PluginInterface.h"
+        "${CMAKE_SOURCE_DIR}/Notepad_plus/include/PluginInterface.h"
+        STATUS download_status
+    )
+    file(DOWNLOAD 
+        "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/Scintilla.h"
+        "${CMAKE_SOURCE_DIR}/Notepad_plus/include/Scintilla.h"
+        STATUS download_status2
+    )
+    file(DOWNLOAD 
+        "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/Notepad_plus.h"
+        "${CMAKE_SOURCE_DIR}/Notepad_plus/include/Notepad_plus.h"
+        STATUS download_status3
+    )
+endif()
+
 # Include directories
 target_include_directories(GoogleKeepSync PRIVATE 
     include
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/Notepad_plus/include
 )
 
 # Link Windows libraries
