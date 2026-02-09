@@ -14,6 +14,7 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <optional>
 #include <windows.h>
 
 namespace NppGoogleKeepSync {

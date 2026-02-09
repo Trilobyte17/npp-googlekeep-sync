@@ -9,7 +9,7 @@ namespace NppGoogleKeepSync {
 
 // Simple JSON parser functions
 namespace {
-    std::string extractJsonValue(const std::string& json, const std::string& key) {
+    static std::string extractJsonValue(const std::string& json, const std::string& key) {
         size_t pos = json.find("\"" + key + "\":");
         if (pos == std::string::npos) return "";
         
@@ -24,7 +24,7 @@ namespace {
         return json.substr(start, end - start);
     }
     
-    bool extractJsonBool(const std::string& json, const std::string& key) {
+    static bool extractJsonBool(const std::string& json, const std::string& key) {
         size_t pos = json.find("\"" + key + "\":");
         if (pos == std::string::npos) return false;
         
@@ -154,7 +154,7 @@ bool PythonBridge::StartPythonProcess()
 
     if (!CreateProcessW(nullptr, &cmdLine[0], nullptr, nullptr, TRUE, 
                         CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
-        m_last_error = "Failed to create Python process. Error: " + std::to_string(GetLastError());
+        m_last_error = "Failed to create Python process. Error: " + std::to_string((long)GetLastError());
         CloseHandle(m_hChildStdInRd);
         CloseHandle(m_hChildStdInWr);
         CloseHandle(m_hChildStdOutRd);

@@ -100,10 +100,10 @@ private:
 
 // DLL Export Functions
 extern "C" {
-    BOOL APIENTRY isUnicode();
-    CONST WCHAR* APIENTRY getName();
-    VOID APIENTRY setInfo(NppData notepadPlusData);
-    CONST WCHAR* APIENTRY getFuncsArray(INT* nbF);
-    BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam);
-    LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode);
+    BOOL __declspec(dllexport) APIENTRY isUnicode();
+    CONST WCHAR* __declspec(dllexport) APIENTRY getName();
+    VOID __declspec(dllexport) APIENTRY setInfo(NppData notepadPlusData);
+    CONST WCHAR* __declspec(dllexport) APIENTRY getFuncsArray(INT* nbF);
+    BOOL __declspec(dllexport) APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam);
+    LONGLONG __declspec(dllexport) APIENTRY beNotificationProc(SCNotification* notifyCode);
 }
