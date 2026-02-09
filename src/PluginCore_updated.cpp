@@ -49,13 +49,6 @@ BOOL FileSyncManager::Initialize(const PluginConfig& config) {
         return FALSE;
     }
     
-    // Auto-login with stored credentials if available
-    if (!m_config.clientId.empty() && !m_config.clientSecret.empty()) {
-        std::string email(m_config.clientId.begin(), m_config.clientId.end());
-        std::string password(m_config.clientSecret.begin(), m_config.clientSecret.end());
-        m_keepBridge->Login(email, password);
-    }
-    
     // Load mappings
     LoadMappings();
     
@@ -137,22 +130,11 @@ BOOL FileSyncManager::SyncFile(const std::wstring& filePath, BOOL force) {
         return FALSE;
     }
     
-    // Login with stored credentials if not authenticated
+    // Check if authenticated
     auto status = m_keepBridge->GetStatus();
-    if (!status.success || status.raw_json.find("\"authenticated\":true") == std::string::npos) {
-        // Try to login with stored credentials
-        if (!m_config.clientId.empty() && !m_config.clientSecret.empty()) {
-            std::string email(m_config.clientId.begin(), m_config.clientId.end());
-            std::string password(m_config.clientSecret.begin(), m_config.clientSecret.end());
-            auto loginResult = m_keepBridge->Login(email, password);
-            if (!loginResult.success) {
-                MessageBoxW(NULL, L"Failed to authenticate with Google Keep. Please check your credentials.", L"Sync Failed", MB_OK | MB_ICONWARNING);
-                return FALSE;
-            }
-        } else {
-            MessageBoxW(NULL, L"Not authenticated with Google Keep. Please configure login in plugin settings.", L"Sync Failed", MB_OK | MB_ICONWARNING);
-            return FALSE;
-        }
+    if (!status.success || !status.raw_json.find("\"authenticated\":true") != std::string::npos) {
+        MessageBoxW(NULL, L"Not authenticated with Google Keep. Please configure login in plugin settings.", L"Sync Failed", MB_OK | MB_ICONWARNING);
+        return FALSE;
     }
     
     std::wstring content = ReadFileContents(filePath);
@@ -173,23 +155,48 @@ BOOL FileSyncManager::SyncFile(const std::wstring& filePath, BOOL force) {
     std::string utf8Title(keepTitle.begin(), keepTitle.end());
     std::string utf8Content(content.begin(), content.end());
     
+    // For now, we'll just do a simple sync using Python bridge
+    // In full implementation, we'd need to create/update notes
+    // based on existing mappings
+    
+    // Try to find existing note with this title
+    auto listResult = m_keepBridge->ListNotes(false, 10, utf8Title);
+    if (!listResult.success) {
+        return FALSE;
+    }
+    
+    // Parse the list to see if we have a matching note
+    auto notes = m_keepBridge->ParseNoteList(listResult.raw_json);
+    
+    if (mapping.keepNoteId.empty() && !notes.empty()) {
+        // Use first matching note
+        mapping.keepNoteId = notes[0].id;
+    }
+    
     BOOL result = FALSE;
     
     if (mapping.keepNoteId.empty()) {
-        // Create NEW note on first sync
-        auto createResult = m_keepBridge->CreateNote(utf8Title, utf8Content);
-        if (createResult.success) {
-            // Extract note ID from response
-            std::string id = extractJsonValue(createResult.raw_json, "id");
-            if (!id.empty()) {
-                mapping.keepNoteId = std::wstring(id.begin(), id.end());
+        // Create new note
+        auto createResult = m_keepBridge->CreateNote(utf8Title, utf8Content, false, "DEFAULT", {"Notepad++"});
+        result = createResult.success;
+        if (result) {
+            // Parse note ID from response
+            // Simple JSON parsing to extract note ID
+            std::string json = createResult.raw_json;
+            size_t idPos = json.find("\"id\":\"");
+            if (idPos != std::string::npos) {
+                idPos += 6; // Skip "\"id\":\""
+                size_t endPos = json.find("\"", idPos);
+                if (endPos != std::string::npos) {
+                    std::string noteId = json.substr(idPos, endPos - idPos);
+                    mapping.keepNoteId = std::wstring(noteId.begin(), noteId.end());
+                }
             }
-            result = TRUE;
         }
     } else {
-        // Update EXISTING note on subsequent syncs
+        // Update existing note
         std::string noteId(mapping.keepNoteId.begin(), mapping.keepNoteId.end());
-        auto updateResult = m_keepBridge->UpdateNote(noteId, utf8Title, utf8Content);
+        auto updateResult = m_keepBridge->UpdateNote(noteId, std::nullopt, utf8Content);
         result = updateResult.success;
     }
     
@@ -419,11 +426,10 @@ void GoogleKeepSyncPlugin::ShowConfigDialog() {
     // Create and show configuration dialog
     // Would use CreateDialog or DialogBox
     // For now, show simple message box
-    std::wstring message = L"Configuration dialog would show here.\n\n"
-                          L"Email: " + m_config.clientId + L"\n"
-                          L"Auto-sync: " + (m_config.autoSyncEnabled ? std::wstring(L"Enabled") : std::wstring(L"Disabled"));
     MessageBoxW(m_hwndNpp, 
-                message.c_str(),
+                L"Configuration dialog would show here.\n\n"
+                L"Email: " + m_config.clientId + L"\n"
+                L"Auto-sync: " + (m_config.autoSyncEnabled ? L"Enabled" : L"Disabled"),
                 L"Google Keep Sync Configuration",
                 MB_OK);
 }

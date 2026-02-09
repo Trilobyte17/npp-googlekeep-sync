@@ -25,18 +25,16 @@ endif()
 set(SOURCES
     src/DllMain.cpp
     src/PluginCore.cpp
-    src/GoogleKeepClient.cpp
-    src/OAuthManager.cpp
-    src/WinHttpClient.cpp
     src/ConfigDialog.cpp
+    gkeep_bridge/PythonBridge.cpp
 )
 
 # Header files
 set(HEADERS
     include/PluginInterface.h
-    include/GoogleKeepAPI.h
     include/PluginCore.h
     include/ConfigDialog.h
+    gkeep_bridge/PythonBridge.h
 )
 
 # Create DLL
@@ -86,6 +84,14 @@ target_link_libraries(GoogleKeepSync PRIVATE
     winhttp
     crypt32
     ws2_32
+)
+
+# Include gkeep_bridge directory
+target_include_directories(GoogleKeepSync PRIVATE 
+    include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/Notepad_plus/include
+    gkeep_bridge
 )
 
 # Define UNICODE

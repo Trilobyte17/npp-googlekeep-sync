@@ -1,0 +1,389 @@
+#!/usr/bin/env python3
+"""Google Keep Bridge - Python backend for N++ Google Keep Sync plugin."""
+
+import sys
+import os
+import json
+import base64
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
+try:
+    import gkeepapi
+    from gkeepapi.exception import LoginException
+except ImportError:
+    print(json.dumps({"error": "gkeepapi not installed. Run: pip install gkeepapi"}), file=sys.stderr)
+    sys.exit(1)
+
+
+class KeepBridge:
+    """Bridge between Notepad++ plugin and Google Keep API."""
+    
+    def __init__(self):
+        self.keep = gkeepapi.Keep()
+        self.config_dir = self._get_config_dir()
+        self.auth_file = self.config_dir / "auth.json"
+        self.state_file = self.config_dir / "state.bin"
+        self.email: Optional[str] = None
+        self.app_password: Optional[str] = None
+        
+    def _get_config_dir(self) -> Path:
+        """Get configuration directory for storing auth data."""
+        if os.name == 'nt':
+            appdata = os.environ.get('APPDATA')
+            if appdata:
+                config_dir = Path(appdata) / "Notepad++" / "plugins" / "config" / "keep_bridge"
+            else:
+                config_dir = Path.home() / ".keep_bridge"
+        else:
+            config_dir = Path.home() / ".config" / "keep_bridge"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        return config_dir
+    
+    def _load_auth(self) -> bool:
+        try:
+            if self.auth_file.exists():
+                with open(self.auth_file, 'r') as f:
+                    auth_data = json.load(f)
+                    self.email = auth_data.get('email')
+                    encoded_pass = auth_data.get('app_password')
+                    if encoded_pass:
+                        self.app_password = base64.b64decode(encoded_pass.encode()).decode()
+                    return True
+            return False
+        except Exception:
+            return False
+    
+    def _save_auth(self) -> bool:
+        try:
+            auth_data = {'email': self.email, 'app_password': base64.b64encode(self.app_password.encode()).decode() if self.app_password else None}
+            with open(self.auth_file, 'w') as f:
+                json.dump(auth_data, f)
+            return True
+        except Exception:
+            return False
+    
+    def _save_state(self) -> bool:
+        try:
+            self.keep.dump(self.state_file)
+            return True
+        except Exception:
+            return False
+    
+    def _load_state(self) -> bool:
+        try:
+            if self.state_file.exists():
+                self.keep.restore(self.state_file)
+                return True
+            return False
+        except Exception:
+            return False
+    
+    def handle_login(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        email = params.get('email')
+        app_password = params.get('app_password')
+        if not email or not app_password:
+            return {"success": False, "error": "Email and app_password required"}
+        try:
+            self.email = email
+            self.app_password = app_password
+            self.keep.login(email, app_password)
+            self._save_auth()
+            self._save_state()
+            return {"success": True, "message": "Login successful", "email": email}
+        except LoginException as e:
+            return {"success": False, "error": f"Login failed: {str(e)}"}
+        except Exception as e:
+            return {"success": False, "error": f"Unexpected error: {str(e)}"}
+    
+    def handle_sync(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        if not self._load_auth():
+            return {"success": False, "error": "Not authenticated. Login first."}
+        try:
+            self._load_state()
+            self.keep.sync()
+            self._save_state()
+            return {"success": True, "message": "Sync completed"}
+        except Exception:
+            # Try re-authenticating on sync failure
+            try:
+                self.keep.login(self.email, self.app_password)
+                self.keep.sync()
+                self._save_state()
+                return {"success": True, "message": "Sync completed after re-auth"}
+            except Exception as e2:
+                return {"success": False, "error": f"Sync failed: {str(e2)}"}
+    
+    def handle_list(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        if not self._load_auth():
+            return {"success": False, "error": "Not authenticated. Login first."}
+        try:
+            self._load_state()
+            all_notes = params.get('all', False)
+            limit = params.get('limit', 100)
+            query = params.get('query', '')
+            labels = params.get('labels', [])
+            notes_list = []
+            notes = self.keep.find(query=query) if query else self.keep.all()
+            count = 0
+            for note in notes:
+                if count >= limit:
+                    break
+                if note.archived and not all_notes:
+                    continue
+                if labels:
+                    note_labels = [l.name for l in note.labels.all()]
+                    if not any(l in note_labels for l in labels):
+                        continue
+                notes_list.append({
+                    "id": note.id,
+                    "title": note.title or "Untitled",
+                    "text": note.text[:500] if note.text else "",
+                    "pinned": note.pinned,
+                    "archived": note.archived,
+                    "color": note.color.name if note.color else "UNKNOWN",
+                    "labels": [l.name for l in note.labels.all()],
+                    "timestamp": str(note.timestamps.created) if note.timestamps else ""
+                })
+                count += 1
+            return {"success": True, "count": len(notes_list), "notes": notes_list}
+        except Exception as e:
+            return {"success": False, "error": f"List failed: {str(e)}"}
+    
+    def handle_get(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        if not self._load_auth():
+            return {"success": False, "error": "Not authenticated. Login first."}
+        note_id = params.get('id')
+        if not note_id:
+            return {"success": False, "error": "Note ID required"}
+        try:
+            self._load_state()
+            note = self.keep.get(note_id)
+            if not note:
+                return {"success": False, "error": "Note not found"}
+            result = {
+                "success": True,
+                "note": {
+                    "id": note.id,
+                    "title": note.title or "Untitled",
+                    "text": note.text or "",
+                    "pinned": note.pinned,
+                    "archived": note.archived,
+                    "color": note.color.name if note.color else "UNKNOWN",
+                    "labels": [l.name for l in note.labels.all()],
+                    "timestamps": {
+                        "created": str(note.timestamps.created) if note.timestamps else "",
+                        "edited": str(note.timestamps.edited) if note.timestamps else "",
+                        "updated": str(note.timestamps.updated) if note.timestamps else ""
+                    }
+                }
+            }
+            return result
+        except Exception as e:
+            return {"success": False, "error": f"Get failed: {str(e)}"}
+    
+    def handle_delete(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        if not self._load_auth():
+            return {"success": False, "error": "Not authenticated. Login first."}
+        note_id = params.get('id')
+        permanent = params.get('permanent', False)
+        if not note_id:
+            return {"success": False, "error": "Note ID required"}
+        try:
+            self._load_state()
+            note = self.keep.get(note_id)
+            if not note:
+                return {"success": False, "error": "Note not found"}
+            if permanent:
+                note.delete()
+                message = "Note permanently deleted"
+            else:
+                note.archived = True
+                message = "Note archived"
+            self.keep.sync()
+            self._save_state()
+            return {"success": True, "message": message, "id": note_id}
+        except Exception as e:
+            return {"success": False, "error": f"Delete failed: {str(e)}"}
+    
+    def handle_create_note(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a new note in Google Keep"""
+        if not self._load_auth():
+            return {"success": False, "error": "Not authenticated. Login first."}
+        
+        title = params.get('title', '')
+        text = params.get('text', '')
+        pinned = params.get('pinned', False)
+        color = params.get('color', 'DEFAULT')
+        labels = params.get('labels', [])
+        
+        if not title and not text:
+            return {"success": False, "error": "Note must have title or text"}
+        
+        try:
+            self._load_state()
+            note = self.keep.createNote(title, text)
+            note.pinned = pinned
+            
+            # Map color string to gkeepapi color
+            if color != 'DEFAULT':
+                try:
+                    color_enum = getattr(gkeepapi.node.ColorValue, color.upper())
+                    note.color = color_enum
+                except AttributeError:
+                    pass
+            
+            # Add labels if any
+            for label_name in labels:
+                label = self.keep.findLabel(label_name)
+                if not label:
+                    label = self.keep.createLabel(label_name)
+                note.labels.add(label)
+            
+            self.keep.sync()
+            self._save_state()
+            
+            return {
+                "success": True,
+                "message": "Note created",
+                "note": {
+                    "id": note.id,
+                    "title": note.title,
+                    "text": note.text,
+                    "pinned": note.pinned,
+                    "color": note.color.name if note.color else 'DEFAULT',
+                    "labels": [label.name for label in note.labels],
+                    "timestamps": {
+                        "created": str(note.timestamps.created),
+                        "edited": str(note.timestamps.edited)
+                    }
+                }
+            }
+        except Exception as e:
+            return {"success": False, "error": f"Failed to create note: {str(e)}"}
+    
+    def handle_update_note(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Update an existing note in Google Keep"""
+        if not self._load_auth():
+            return {"success": False, "error": "Not authenticated. Login first."}
+        
+        note_id = params.get('id')
+        title = params.get('title')
+        text = params.get('text')
+        pinned = params.get('pinned')
+        color = params.get('color')
+        labels = params.get('labels')
+        
+        if not note_id:
+            return {"success": False, "error": "Note ID required"}
+        
+        try:
+            self._load_state()
+            note = self.keep.get(note_id)
+            if not note:
+                return {"success": False, "error": "Note not found"}
+            
+            if title is not None:
+                note.title = title
+            if text is not None:
+                note.text = text
+            if pinned is not None:
+                note.pinned = pinned
+            if color is not None:
+                try:
+                    if color == 'DEFAULT':
+                        note.color = None
+                    else:
+                        color_enum = getattr(gkeepapi.node.ColorValue, color.upper())
+                        note.color = color_enum
+                except AttributeError:
+                    pass
+            
+            # Update labels if provided
+            if labels is not None:
+                note.labels.clear()
+                for label_name in labels:
+                    label = self.keep.findLabel(label_name)
+                    if not label:
+                        label = self.keep.createLabel(label_name)
+                    note.labels.add(label)
+            
+            self.keep.sync()
+            self._save_state()
+            
+            return {
+                "success": True,
+                "message": "Note updated",
+                "note": {
+                    "id": note.id,
+                    "title": note.title,
+                    "text": note.text,
+                    "pinned": note.pinned,
+                    "color": note.color.name if note.color else 'DEFAULT',
+                    "labels": [label.name for label in note.labels],
+                    "timestamps": {
+                        "created": str(note.timestamps.created),
+                        "edited": str(note.timestamps.edited)
+                    }
+                }
+            }
+        except Exception as e:
+            return {"success": False, "error": f"Failed to update note: {str(e)}"}
+    
+    def handle_status(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        has_auth = self._load_auth()
+        has_state = self.state_file.exists()
+        return {
+            "success": True,
+            "authenticated": has_auth,
+            "email": self.email if has_auth else None,
+            "has_sync_state": has_state,
+            "config_dir": str(self.config_dir)
+        }
+    
+    def process_command(self, command: Dict[str, Any]) -> Dict[str, Any]:
+        cmd = command.get('command')
+        params = command.get('params', {})
+        handlers = {
+            'login': self.handle_login,
+            'sync': self.handle_sync,
+            'list': self.handle_list,
+            'get': self.handle_get,
+            'delete': self.handle_delete,
+            'create_note': self.handle_create_note,
+            'update_note': self.handle_update_note,
+            'status': self.handle_status
+        }
+        handler = handlers.get(cmd)
+        if handler:
+            return handler(params)
+        return {"success": False, "error": f"Unknown command: {cmd}"}
+    
+    def run(self):
+        while True:
+            try:
+                line = sys.stdin.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    command = json.loads(line)
+                    result = self.process_command(command)
+                    print(json.dumps(result), flush=True)
+                except json.JSONDecodeError as e:
+                    print(json.dumps({"success": False, "error": f"Invalid JSON: {str(e)}"}), flush=True)
+            except KeyboardInterrupt:
+                break
+            except Exception as e:
+                print(json.dumps({"success": False, "error": f"Internal error: {str(e)}"}), flush=True)
+
+
+def main():
+    bridge = KeepBridge()
+    bridge.run()
+
+
+if __name__ == '__main__':
+    main()

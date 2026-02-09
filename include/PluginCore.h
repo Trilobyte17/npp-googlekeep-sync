@@ -4,7 +4,7 @@
 #pragma once
 
 #include "PluginInterface.h"
-#include "GoogleKeepAPI.h"
+#include "gkeep_bridge/PythonBridge.h"
 #include <thread>
 #include <mutex>
 #include <queue>
@@ -37,7 +37,7 @@ private:
     std::unordered_map<std::wstring, NoteMapping> m_mappings;
     std::wstring m_mappingsFile;
     BOOL m_autoSyncEnabled;
-    std::unique_ptr<GoogleKeepClient> m_keepClient;
+    std::unique_ptr<NppGoogleKeepSync::PythonBridge> m_keepBridge;
     
     std::wstring CalculateFileHash(const std::wstring& filePath);
     std::wstring ReadFileContents(const std::wstring& filePath);
@@ -87,7 +87,7 @@ private:
     
     PluginConfig m_config;
     std::unique_ptr<FileSyncManager> m_syncManager;
-    std::unique_ptr<GoogleKeepClient> m_keepClient;
+    std::unique_ptr<NppGoogleKeepSync::PythonBridge> m_keepBridge;
     
     // Menu handles
     HMENU m_hPluginMenu;

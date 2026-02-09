@@ -35,11 +35,32 @@ struct PluginMessage {
     LPCWSTR pszName;
 };
 
-// Keep API Constants
-#define KEEP_API_BASE_URL     L"https://keep.googleapis.com/v1/"
-#define KEEP_AUTH_URL         L"https://accounts.google.com/o/oauth2/v2/auth"
-#define KEEP_TOKEN_URL        L"https://oauth2.googleapis.com/token"
-#define KEEP_SCOPE            L"https://www.googleapis.com/auth/keep"
+// Note sync status
+enum class SyncStatus {
+    PENDING,
+    SYNCED,
+    FAILED,
+    DISABLED
+};
+
+struct NoteMapping {
+    std::wstring filePath;
+    std::wstring keepNoteId;
+    std::wstring lastSyncHash;
+    SyncStatus status;
+    FILETIME lastSyncTime;
+};
+
+// Plugin configuration
+struct PluginConfig {
+    BOOL autoSyncEnabled;
+    std::wstring clientId;      // Reused for email
+    std::wstring clientSecret;  // Reused for app password
+    std::wstring defaultNoteTitle;
+    BOOL syncFileMetadata;
+    BOOL createLabels;
+    std::vector<std::wstring> excludedExtensions;
+};
 
 // Note sync status
 enum class SyncStatus {
