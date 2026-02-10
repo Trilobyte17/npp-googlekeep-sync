@@ -109,13 +109,3 @@ private:
     void ShowConfigDialog();
     void UpdateMenuState();
 };
-
-// DLL Export Function Declarations (implemented in DllMain.cpp)
-extern "C" {
-    BOOL APIENTRY isUnicode();
-    CONST WCHAR* APIENTRY getName();
-    VOID APIENTRY setInfo(NppData notepadPlusData);
-    CONST WCHAR* APIENTRY getFuncsArray(INT* nbF);
-    BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam);
-    LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode);
-}
