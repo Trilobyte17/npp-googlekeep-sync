@@ -9,6 +9,12 @@
 #include <mutex>
 #include <queue>
 
+// Login result structure
+struct LoginResult {
+    bool success;
+    std::wstring error_message;
+};
+
 // File watcher for auto-sync
 class FileSyncManager {
 public:
@@ -30,6 +36,9 @@ public:
     
     void LoadMappings();
     void SaveMappings() const;
+    
+    // Bridge access
+    NppGoogleKeepSync::PythonBridge* GetBridge() { return m_keepBridge.get(); }
     
 private:
     mutable std::mutex m_mutex;
@@ -73,6 +82,9 @@ public:
     const PluginConfig& GetConfig() const { return m_config; }
     void SaveConfig();
     void LoadConfig();
+    
+    // App Password login
+    LoginResult Login(const std::wstring& email, const std::wstring& appPassword);
     
     // ARM64 specific
     static BOOL IsARM64() { return TRUE; } // Compiled for ARM64

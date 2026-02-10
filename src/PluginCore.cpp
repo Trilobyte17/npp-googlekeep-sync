@@ -391,10 +391,10 @@ void GoogleKeepSyncPlugin::LoadConfig() {
         
         wchar_t buffer[1024];
         GetPrivateProfileStringW(L"Credentials", L"Email", L"", buffer, 1024, iniPath.c_str());
-        m_config.clientId = buffer; // Reusing clientId field for email
+        m_config.clientId = buffer; // Email
         
         GetPrivateProfileStringW(L"Credentials", L"AppPassword", L"", buffer, 1024, iniPath.c_str());
-        m_config.clientSecret = buffer; // Reusing clientSecret field for app password
+        m_config.clientSecret = buffer; // App Password
     }
 }
 
@@ -408,6 +408,33 @@ void GoogleKeepSyncPlugin::SaveConfig() {
         WritePrivateProfileStringW(L"Credentials", L"Email", m_config.clientId.c_str(), iniPath.c_str());
         WritePrivateProfileStringW(L"Credentials", L"AppPassword", m_config.clientSecret.c_str(), iniPath.c_str());
     }
+}
+
+LoginResult GoogleKeepSyncPlugin::Login(const std::wstring& email, const std::wstring& appPassword) {
+    LoginResult result;
+    result.success = false;
+    
+    if (!m_syncManager || !m_syncManager->GetBridge()) {
+        result.error_message = L"Sync manager not initialized";
+        return result;
+    }
+    
+    std::string emailUtf8(email.begin(), email.end());
+    std::string passwordUtf8(appPassword.begin(), appPassword.end());
+    
+    auto loginResult = m_syncManager->GetBridge()->Login(emailUtf8, passwordUtf8);
+    
+    if (loginResult.success) {
+        // Save credentials
+        m_config.clientId = email;
+        m_config.clientSecret = appPassword;
+        SaveConfig();
+        result.success = true;
+    } else {
+        result.error_message = std::wstring(loginResult.error_message.begin(), loginResult.error_message.end());
+    }
+    
+    return result;
 }
 
 void GoogleKeepSyncPlugin::CreateMenu() {

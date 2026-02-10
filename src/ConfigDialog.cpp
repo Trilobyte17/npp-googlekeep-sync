@@ -170,31 +170,34 @@ void ConfigDialog::OnAuthenticate() {
     // Get current values first
     wchar_t buffer[1024];
     GetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_ID, buffer, 1024);
-    std::wstring clientId = buffer;
+    std::wstring email = buffer;
     
     GetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_SECRET, buffer, 1024);
-    std::wstring clientSecret = buffer;
+    std::wstring appPassword = buffer;
     
-    if (clientId.empty() || clientSecret.empty()) {
+    if (email.empty() || appPassword.empty()) {
         MessageBoxW(m_hwndDialog, 
-                    L"Please enter both Client ID and Client Secret first.",
-                    L"Authentication Error", 
+                    L"Please enter both Email and App Password first.\n\n"
+                    L"Generate an App Password at: https://myaccount.google.com/apppasswords",
+                    L"Login Error", 
                     MB_OK | MB_ICONWARNING);
         return;
     }
     
-    UpdateStatus(L"Opening browser for authentication...");
+    UpdateStatus(L"Logging in to Google Keep...");
     EnableControls(FALSE);
     
-    // Create Keep client and initiate OAuth
-    GoogleKeepClient client;
-    if (client.Authenticate(clientId, clientSecret, m_hwndDialog)) {
-        UpdateStatus(L"Authentication in progress... Please complete in browser.");
-        
-        // In a real implementation, this would wait for the callback
-        // and update the status accordingly
+    // Use PythonBridge to login
+    GoogleKeepSyncPlugin& plugin = GoogleKeepSyncPlugin::Instance();
+    auto result = plugin.Login(email, appPassword);
+    
+    if (result.success) {
+        UpdateStatus(L"Login successful!");
+        EnableControls(TRUE);
     } else {
-        UpdateStatus(L"Authentication failed!");
+        std::wstring errorMsg = L"Login failed: " + result.error_message;
+        UpdateStatus(L"Login failed!");
+        MessageBoxW(m_hwndDialog, errorMsg.c_str(), L"Login Failed", MB_OK | MB_ICONERROR);
         EnableControls(TRUE);
     }
 }

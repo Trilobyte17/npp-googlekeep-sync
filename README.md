@@ -1,39 +1,50 @@
 # Google Keep Sync Plugin for Notepad++ (ARM64)
 
-A Notepad++ plugin for Windows ARM64 (Prism Lake/QuarkBridge processors) that automatically syncs file contents to Google Keep notes.
+A Notepad++ plugin for Windows ARM64 (Prism Lake/QuarkBridge processors) that automatically syncs file contents to Google Keep notes using your personal Google account.
 
 ## Features
 
 - **Auto-Sync on Save**: Automatically syncs file contents to Google Keep when you save a file in Notepad++
 - **Create/Update Notes**: Creates new Google Keep notes or updates existing ones
 - **Configurable Sync Behavior**: Toggle auto-sync, exclude specific file extensions, customize note titles
-- **OAuth 2.0 Authentication**: Secure PKCE-based authentication flow
+- **App Password Authentication**: Simple email + app password (no OAuth complexity)
 - **ARM64 Optimized**: Built specifically for ARM64 Windows with Prism/QuarkBridge processors
 
 ## Architecture
 
-This plugin follows the NppEventExec plugin pattern:
-- Hooks into Notepad++ notification events (FILEBEFORESAVE, BUFFERSAVED, etc.)
-- Uses C++ native Windows APIs (WinHTTP, Windows Cryptography)
-- Implements OAuth 2.0 with PKCE for secure credential handling
-- Uses Google Keep REST API v1
+- **C++ Plugin**: Hooks into Notepad++ notification events (FILEBEFORESAVE, BUFFERSAVED, etc.)
+- **Python Bridge**: Uses `gkeepapi` library for Google Keep API communication
+- **App Password Auth**: Simple login with Google App Password (no OAuth tokens to manage)
+
+```
++----------------+      JSON/stdio       +------------------+      HTTPS       +---------------+
+| Notepad++      |  <=================>  | keep_bridge.py   |  <============>  | Google Keep   |
+| Plugin (C++)   |    (stdin/stdout)     | (Python/gkeepapi)|                  |   API         |
++----------------+                       +------------------+                  +---------------+
+```
 
 ## Prerequisites
 
 1. **Notepad++ v8.0+** (64-bit ARM64 build)
 2. **Windows 11 ARM64** or Windows 10 ARM64
-3. **Google Cloud OAuth Credentials** (see Setup section)
+3. **Python 3.7+** (for the gkeepapi bridge)
+4. **Google App Password** (see Setup section)
 
 ## Installation
 
 ### Method 1: Pre-built Binary
 
 1. Download the ARM64 release: `GoogleKeepSync-arm64.dll`
-2. Copy to Notepad++ plugins directory:
+2. Copy `GoogleKeepSync-arm64.dll` to:
    ```
    %LOCALAPPDATA%\Programs\Notepad++\plugins\GoogleKeepSync\
    ```
-3. Restart Notepad++
+3. Copy `keep_bridge.py` to the same directory
+4. Install Python dependencies:
+   ```bash
+   pip install gkeepapi
+   ```
+5. Restart Notepad++
 
 ### Method 2: Build from Source
 
@@ -41,12 +52,13 @@ This plugin follows the NppEventExec plugin pattern:
 - Visual Studio 2022 with ARM64 components
 - CMake 3.20+
 - Windows SDK 10.0.22621.0+
+- Python 3.7+ (for gkeepapi)
 
 #### Build Steps
 
 ```batch
 # Clone and configure
-git clone <repository>
+git clone https://github.com/Trilobyte17/npp-googlekeep-sync.git
 cd NppGoogleKeepSync
 mkdir build && cd build
 
@@ -60,51 +72,50 @@ cmake --build . --config Release
 # The post-build step copies the DLL to dist/plugins/GoogleKeepSync/
 ```
 
-## Google Cloud Setup
+## Setup: Generate App Password
 
-### 1. Create OAuth 2.0 Credentials
+### 1. Enable 2-Factor Authentication
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Enable the Google Keep API:
-   - Navigate to **APIs & Services** → **Library**
-   - Search for "Google Keep API"
-   - Click **Enable**
+Before you can generate an App Password, you must have 2FA enabled on your Google account:
 
-4. Create OAuth 2.0 credentials:
-   - Go to **APIs & Services** → **Credentials**
-   - Click **Create Credentials** → **OAuth client ID**
-   - Application type: **Desktop app**
-   - Name: "Notepad++ Google Keep Sync"
-   - Click **Create**
+1. Go to https://myaccount.google.com/security
+2. Ensure "2-Step Verification" is enabled
 
-5. **Important**: Download the client credentials JSON file
+### 2. Generate App Password
 
-### 2. Configure Plugin
+1. Go to https://myaccount.google.com/apppasswords
+2. Sign in with your Google account
+3. Under "Select app", choose "Other" and enter "Notepad++ Keep Sync"
+4. Click "Generate"
+5. **Copy the 16-character password** (format: `abcd efgh ijkl mnop`)
+6. Use this password in the plugin configuration
+
+**Important**: You'll need this password once to log in. The plugin stores it securely.
+
+## Configuration
+
+### Plugin Configuration
 
 1. Open Notepad++
 2. Go to **Plugins** → **Google Keep Sync** → **Configure...**
-3. Enter your OAuth credentials:
-   - Client ID (from Google Cloud Console)
-   - Client Secret (from Google Cloud Console)
-4. Click **Authenticate**
-5. A browser window will open for Google authorization
-6. Grant permission when prompted
-7. The plugin will automatically capture the authorization code via localhost callback
+3. Enter:
+   - **Email**: Your Google account email (e.g., `user@gmail.com`)
+   - **App Password**: The 16-character password from step 6 above
+4. Click **Login**
+5. Status should show "Login successful"
 
-### OAuth Configuration File
+### Manual Configuration File
 
-Alternatively, create the config file manually:
+You can also edit the config file directly:
 
 ```ini
 ; %APPDATA%\Notepad++\plugins\config\GoogleKeepSync.ini
 [Settings]
 AutoSync=1
 
-[OAuth]
-ClientId=YOUR_CLIENT_ID_HERE
-ClientSecret=YOUR_CLIENT_SECRET_HERE
-RefreshToken=(populated after first auth)
+[Credentials]
+Email=your.email@gmail.com
+AppPassword=abcd efgh ijkl mnop
 ```
 
 ## Usage
@@ -115,17 +126,17 @@ Access via **Plugins** → **Google Keep Sync**:
 
 - **Sync Now** - Manually sync current file to Google Keep
 - **Toggle Auto-Sync** - Enable/disable automatic syncing on save
-- **Configure...** - Open configuration dialog for OAuth settings
+- **Configure...** - Open configuration dialog for login/settings
 - **About** - Plugin information
 
 ### How It Works
 
 1. When you save a file in Notepad++, the plugin receives a notification
 2. If auto-sync is enabled, it checks if the file needs syncing
-3. Creates a Google Keep note with:
-   - **Title**: Filename (without extension)
+3. Creates/updates a Google Keep note with:
+   - **Title**: `Notepad++ Sync: filename`
    - **Content**: Full file contents
-   - **Labels**: "Notepad++", "Auto-Sync" (configurable)
+   - **Labels**: `Notepad++`, `Auto-Sync` (configurable)
 4. First save creates a new note; subsequent saves update the same note
 
 ### Excluding File Types
@@ -137,47 +148,35 @@ Edit the configuration to exclude specific extensions:
 ExcludedExtensions=exe,dll,png,jpg,pdf
 ```
 
-## API Implementation Details
-
-### Google Keep REST API
-
-The plugin uses these Keep API endpoints:
-
-```
-POST https://keep.googleapis.com/v1/notes
-GET  https://keep.googleapis.com/v1/notes/{noteId}
-PATCH https://keep.googleapis.com/v1/notes/{noteId}
-```
-
-### OAuth 2.0 Flow (PKCE)
-
-1. Plugin generates code verifier and challenge
-2. Opens browser with authorization URL including PKCE parameters
-3. User authenticates with Google
-4. Google redirects to `http://localhost:8899/callback`
-5. Plugin's embedded HTTP server captures the authorization code
-6. Code is exchanged for access token and refresh token
-7. Refresh token is stored securely for future API calls
-
 ## Troubleshooting
 
 ### Plugin not loading
 - Ensure you have the ARM64 version of Notepad++
 - Check that the DLL is in `%LOCALAPPDATA%\Programs\Notepad++\plugins\GoogleKeepSync\`
+- Verify `keep_bridge.py` is in the same directory
 
-### Authentication fails
-- Verify OAuth credentials are correct in Google Cloud Console
-- Ensure Google Keep API is enabled in your project
-- Check firewall/antivirus isn't blocking localhost:8899
+### "gkeepapi not installed"
+Run: `pip install gkeepapi`
+
+### Login fails
+- Verify you generated an App Password (not your regular password)
+- Ensure 2FA is enabled on your Google account
+- Check that you copied the password correctly (includes spaces)
 
 ### Sync fails
-- Check OAuth tokens haven't expired
-- Verify file size is under Google Keep limits (content length)
-- Ensure network connectivity to keep.googleapis.com
+- Ensure network connectivity
+- Try logging out and logging in again
 
-### ARM64 specific issues
-- Check Visual C++ Redistributables are installed (ARM64 version)
-- Ensure Windows is on ARM64 build (run `systeminfo` to verify)
+### Process Communication Timeout
+- Check that Python is in your system PATH
+- Verify `keep_bridge.py` exists in the plugin directory
+
+## Security Notes
+
+1. **App Passwords** are safer than storing your main password
+2. Credentials are stored in `%APPDATA%\Notepad++\plugins\config\`
+3. App Passwords can be revoked from https://myaccount.google.com/apppasswords
+4. Never commit credentials to version control
 
 ## Building for Other Architectures
 
@@ -196,20 +195,21 @@ MIT License - See LICENSE file
 
 ## Acknowledgments
 
-- Based on the NppEventExec and PythonScript plugin architectures
-- Google Keep API documentation
+- **gkeepapi**: Python library for Google Keep API
 - Notepad++ plugin development guide
+- Google Keep API documentation
 
 ## Support
 
 For issues, please check:
-1. Notepad++ plugin development documentation
-2. Google Keep API reference
-3. Windows ARM64 development guides
+1. This repository's Issues page
+2. gkeepapi documentation
+3. Notepad++ plugin development documentation
 
 ---
 
-**Version**: 1.0.0  
+**Version**: 2.0.0  
 **Platform**: Windows ARM64  
 **Notepad++**: v8.0+  
-**API**: Google Keep REST API v1
+**Auth**: Google App Password  
+**Python**: gkeepapi

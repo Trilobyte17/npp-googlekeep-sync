@@ -43,13 +43,13 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSM
 CAPTION "Google Keep Sync Configuration"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    // OAuth Section
-    GROUPBOX        "Google OAuth Credentials",IDC_STATIC,7,7,386,90
-    LTEXT           "Client ID:",IDC_STATIC,17,25,50,8
+    // Google Account Section
+    GROUPBOX        "Google Account (App Password)",IDC_STATIC,7,7,386,90
+    LTEXT           "Email:",IDC_STATIC,17,25,50,8
     EDITTEXT        IDC_EDIT_CLIENT_ID,70,22,313,14,ES_AUTOHSCROLL
-    LTEXT           "Client Secret:",IDC_STATIC,17,45,50,8
-    EDITTEXT        IDC_EDIT_CLIENT_SECRET,70,42,313,14,ES_PASSWORD | ES_AUTOHSCROLL
-    PUSHBUTTON      "Authenticate",IDC_BUTTON_AUTHENTICATE,250,65,133,17
+    LTEXT           "App Password:",IDC_STATIC,17,45,65,8
+    EDITTEXT        IDC_EDIT_CLIENT_SECRET,85,42,298,14,ES_PASSWORD | ES_AUTOHSCROLL
+    PUSHBUTTON      "Login",IDC_BUTTON_AUTHENTICATE,250,65,133,17
     
     // Sync Settings Section
     GROUPBOX        "Sync Settings",IDC_STATIC,7,100,386,100
