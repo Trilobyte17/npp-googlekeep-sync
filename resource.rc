@@ -2,7 +2,7 @@
 // ARM64 Windows Compatible
 
 #include <windows.h>
-#include "resource.h"
+#include <commctrl.h>
 
 // Version information
 VS_VERSION_INFO VERSIONINFO
@@ -45,27 +45,27 @@ CAPTION "Google Keep Sync Configuration"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     // Google Account Section
-    GROUPBOX        "Google Account (App Password)",IDC_STATIC,7,7,386,90
-    LTEXT           "Email:",IDC_STATIC,17,25,50,8
+    GROUPBOX        "Google Account (App Password)",-1,7,7,386,90
+    LTEXT           "Email:",-1,17,25,50,8
     EDITTEXT        IDC_EDIT_CLIENT_ID,70,22,313,14,ES_AUTOHSCROLL
-    LTEXT           "App Password:",IDC_STATIC,17,45,65,8
+    LTEXT           "App Password:",-1,17,45,65,8
     EDITTEXT        IDC_EDIT_CLIENT_SECRET,85,42,298,14,ES_PASSWORD | ES_AUTOHSCROLL
     PUSHBUTTON      "Login",IDC_BUTTON_AUTHENTICATE,250,65,133,17
     
     // Sync Settings Section
-    GROUPBOX        "Sync Settings",IDC_STATIC,7,100,386,100
+    GROUPBOX        "Sync Settings",-1,7,100,386,100
     CONTROL         "Enable Auto-Sync on Save",IDC_CHECK_AUTOSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,118,150,10
     CONTROL         "Include file metadata in notes",IDC_CHECK_SYNC_METADATA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,17,135,150,10
     
     // Exclusions Section
-    LTEXT           "Excluded File Extensions:",IDC_STATIC,17,150,120,8
+    LTEXT           "Excluded File Extensions:",-1,17,150,120,8
     LISTBOX         IDC_LIST_EXCLUSIONS,17,162,150,35,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     EDITTEXT        IDC_EDIT_EXCLUSION,17,200,100,14,ES_AUTOHSCROLL
     PUSHBUTTON      "Add",IDC_BUTTON_ADD_EXCL,122,200,45,14
     PUSHBUTTON      "Remove",IDC_BUTTON_REMOVE_EXCL,17,218,60,14
     
     // Status
-    LTEXT           "Status:",IDC_STATIC,17,225,30,8
+    LTEXT           "Status:",-1,17,225,30,8
     LTEXT           "Ready",IDC_STATUS_TEXT,50,225,333,20
     
     // Buttons
