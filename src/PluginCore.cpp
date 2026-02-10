@@ -74,7 +74,7 @@ BOOL FileSyncManager::Initialize(const PluginConfig& config) {
     
     // Get path to keep_bridge.py relative to plugin DLL
     wchar_t pluginPath[MAX_PATH];
-    GetModuleFileNameW(NULL, pluginPath, MAX_PATH);
+    GetModuleFileNameW(g_hInstance, pluginPath, MAX_PATH);
     std::wstring pluginDir(pluginPath);
     size_t pos = pluginDir.find_last_of(L"\\/");
     if (pos != std::wstring::npos) {
@@ -82,6 +82,9 @@ BOOL FileSyncManager::Initialize(const PluginConfig& config) {
     }
     
     std::wstring pythonScript = pluginDir + L"\\keep_bridge.py";
+    
+    // Debug: Show path being used (remove after debugging)
+    // MessageBoxW(NULL, pythonScript.c_str(), L"Python Script Path", MB_OK);
     
     // Initialize Python bridge
     if (!m_keepBridge->Initialize(L"python", pythonScript)) {
