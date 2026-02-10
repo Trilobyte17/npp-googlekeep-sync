@@ -33,20 +33,12 @@ set(HEADERS
 # Create DLL
 add_library(GoogleKeepSync SHARED ${SOURCES} ${HEADERS})
 
-# Notepad++ SDK - Auto-download if not present
+# Notepad++ SDK - Auto-download from official source
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/Notepad_plus/include/PluginInterface.h")
     message(STATUS "Downloading Notepad++ SDK...")
     file(DOWNLOAD 
-        "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/PluginInterface.h"
+        "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Plugins/PluginInterface.h"
         "${CMAKE_SOURCE_DIR}/Notepad_plus/include/PluginInterface.h"
-    )
-    file(DOWNLOAD 
-        "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/Scintilla.h"
-        "${CMAKE_SOURCE_DIR}/Notepad_plus/include/Scintilla.h"
-    )
-    file(DOWNLOAD 
-        "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/Notepad_plus.h"
-        "${CMAKE_SOURCE_DIR}/Notepad_plus/include/Notepad_plus.h"
     )
 endif()
 
