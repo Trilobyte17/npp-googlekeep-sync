@@ -87,7 +87,7 @@ class KeepBridge:
         try:
             self.email = email
             self.app_password = app_password
-            self.keep.login(email, app_password)
+            self.keep.authenticate(email, app_password)
             self._save_auth()
             self._save_state()
             return {"success": True, "message": "Login successful", "email": email}
@@ -107,7 +107,7 @@ class KeepBridge:
         except Exception:
             # Try re-authenticating on sync failure
             try:
-                self.keep.login(self.email, self.app_password)
+                self.keep.authenticate(self.email, self.app_password)
                 self.keep.sync()
                 self._save_state()
                 return {"success": True, "message": "Sync completed after re-auth"}
