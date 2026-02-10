@@ -158,6 +158,7 @@ bool PythonBridge::StartPythonProcess()
         char buf[256];
         sprintf_s(buf, "Failed to create Python process. Error: %lu", dwErr);
         m_last_error = buf;
+        // Close pipe handles
         CloseHandle(m_hChildStdInRd);
         CloseHandle(m_hChildStdInWr);
         CloseHandle(m_hChildStdOutRd);
