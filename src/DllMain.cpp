@@ -53,26 +53,10 @@ BOOL APIENTRY DllMain(HINSTANCE hInstance, DWORD reason, LPVOID lpReserved) {
 // Notepad++ Plugin Interface Functions - exported with extern "C" and __declspec(dllexport)
 extern "C" {
 
-__declspec(dllexport) BOOL APIENTRY isUnicode() {
-    return TRUE;
-}
+// Forward declaration
+LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode);
 
-__declspec(dllexport) CONST WCHAR* APIENTRY getName() {
-    return GoogleKeepSyncPlugin::Instance().GetName();
-}
-
-__declspec(dllexport) VOID APIENTRY setInfo(NppData notepadPlusData) {
-    g_nppData = notepadPlusData;
-    g_hwndNpp = notepadPlusData._nppHandle;
-    GoogleKeepSyncPlugin::Instance().Init(g_hInstance, g_hwndNpp);
-}
-
-__declspec(dllexport) CONST WCHAR* APIENTRY getFuncsArray(INT* nbF) {
-    *nbF = NB_FUNC;
-    return (WCHAR*)g_funcItems;
-}
-
-__declspec(dllexport) BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam) {
+BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_NOTIFY:
             if (lParam) {
@@ -84,7 +68,7 @@ __declspec(dllexport) BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM 
     return TRUE;
 }
 
-__declspec(dllexport) LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode) {
+LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode) {
     if (!notifyCode) return 0;
     
     // Handle Notepad++ Notifications
@@ -111,6 +95,25 @@ __declspec(dllexport) LONGLONG APIENTRY beNotificationProc(SCNotification* notif
     }
     
     return 0;
+}
+
+__declspec(dllexport) BOOL APIENTRY isUnicode() {
+    return TRUE;
+}
+
+__declspec(dllexport) CONST WCHAR* APIENTRY getName() {
+    return GoogleKeepSyncPlugin::Instance().GetName();
+}
+
+__declspec(dllexport) VOID APIENTRY setInfo(NppData notepadPlusData) {
+    g_nppData = notepadPlusData;
+    g_hwndNpp = notepadPlusData._nppHandle;
+    GoogleKeepSyncPlugin::Instance().Init(g_hInstance, g_hwndNpp);
+}
+
+__declspec(dllexport) CONST WCHAR* APIENTRY getFuncsArray(INT* nbF) {
+    *nbF = NB_FUNC;
+    return (WCHAR*)g_funcItems;
 }
 
 } // extern "C"
