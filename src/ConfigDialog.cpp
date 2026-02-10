@@ -122,11 +122,11 @@ INT_PTR ConfigDialog::OnClose(HWND hwndDlg) {
 }
 
 void ConfigDialog::LoadValues() {
-    // Client ID
-    SetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_ID, m_config.clientId.c_str());
+    // Email
+    SetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_ID, m_config.email.c_str());
     
-    // Client Secret
-    SetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_SECRET, m_config.clientSecret.c_str());
+    // App Password
+    SetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_SECRET, m_config.appPassword.c_str());
     
     // Auto-sync
     CheckDlgButton(m_hwndDialog, IDC_CHECK_AUTOSYNC, 
@@ -144,14 +144,14 @@ void ConfigDialog::LoadValues() {
 }
 
 void ConfigDialog::SaveValues() {
-    // Client ID
+    // Email
     wchar_t buffer[1024];
     GetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_ID, buffer, 1024);
-    m_config.clientId = buffer;
+    m_config.email = buffer;
     
-    // Client Secret
+    // App Password
     GetDlgItemTextW(m_hwndDialog, IDC_EDIT_CLIENT_SECRET, buffer, 1024);
-    m_config.clientSecret = buffer;
+    m_config.appPassword = buffer;
     
     // Auto-sync
     m_config.autoSyncEnabled = IsDlgButtonChecked(m_hwndDialog, IDC_CHECK_AUTOSYNC) == BST_CHECKED;

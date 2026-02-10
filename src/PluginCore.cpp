@@ -4,6 +4,7 @@
 
 #include "../include/PluginCore.h"
 #include "../include/PluginInterface.h"
+#include "../include/ConfigDialog.h"
 #include <wincrypt.h>
 #include <sstream>
 #include <fstream>
@@ -89,9 +90,9 @@ BOOL FileSyncManager::Initialize(const PluginConfig& config) {
     }
     
     // Auto-login with stored credentials if available
-    if (!m_config.clientId.empty() && !m_config.clientSecret.empty()) {
-        std::string email(m_config.clientId.begin(), m_config.clientId.end());
-        std::string password(m_config.clientSecret.begin(), m_config.clientSecret.end());
+    if (!m_config.email.empty() && !m_config.appPassword.empty()) {
+        std::string email(m_config.email.begin(), m_config.email.end());
+        std::string password(m_config.appPassword.begin(), m_config.appPassword.end());
         m_keepBridge->Login(email, password);
     }
     
@@ -180,9 +181,9 @@ BOOL FileSyncManager::SyncFile(const std::wstring& filePath, BOOL force) {
     auto status = m_keepBridge->GetStatus();
     if (!status.success || status.raw_json.find("\"authenticated\":true") == std::string::npos) {
         // Try to login with stored credentials
-        if (!m_config.clientId.empty() && !m_config.clientSecret.empty()) {
-            std::string email(m_config.clientId.begin(), m_config.clientId.end());
-            std::string password(m_config.clientSecret.begin(), m_config.clientSecret.end());
+        if (!m_config.email.empty() && !m_config.appPassword.empty()) {
+            std::string email(m_config.email.begin(), m_config.email.end());
+            std::string password(m_config.appPassword.begin(), m_config.appPassword.end());
             auto loginResult = m_keepBridge->Login(email, password);
             if (!loginResult.success) {
                 MessageBoxW(NULL, L"Failed to authenticate with Google Keep. Please check your credentials.", L"Sync Failed", MB_OK | MB_ICONWARNING);
@@ -430,10 +431,10 @@ void GoogleKeepSyncPlugin::LoadConfig() {
         
         wchar_t buffer[1024];
         GetPrivateProfileStringW(L"Credentials", L"Email", L"", buffer, 1024, iniPath.c_str());
-        m_config.clientId = buffer; // Email
+        m_config.email = buffer;
         
         GetPrivateProfileStringW(L"Credentials", L"AppPassword", L"", buffer, 1024, iniPath.c_str());
-        m_config.clientSecret = buffer; // App Password
+        m_config.appPassword = buffer;
     }
 }
 
@@ -444,8 +445,8 @@ void GoogleKeepSyncPlugin::SaveConfig() {
         
         WritePrivateProfileStringW(L"Settings", L"AutoSync", 
                                    m_config.autoSyncEnabled ? L"1" : L"0", iniPath.c_str());
-        WritePrivateProfileStringW(L"Credentials", L"Email", m_config.clientId.c_str(), iniPath.c_str());
-        WritePrivateProfileStringW(L"Credentials", L"AppPassword", m_config.clientSecret.c_str(), iniPath.c_str());
+        WritePrivateProfileStringW(L"Credentials", L"Email", m_config.email.c_str(), iniPath.c_str());
+        WritePrivateProfileStringW(L"Credentials", L"AppPassword", m_config.appPassword.c_str(), iniPath.c_str());
     }
 }
 
@@ -465,8 +466,8 @@ LoginResult GoogleKeepSyncPlugin::Login(const std::wstring& email, const std::ws
     
     if (loginResult.success) {
         // Save credentials
-        m_config.clientId = email;
-        m_config.clientSecret = appPassword;
+        m_config.email = email;
+        m_config.appPassword = appPassword;
         SaveConfig();
         result.success = true;
     } else {
@@ -482,16 +483,8 @@ void GoogleKeepSyncPlugin::CreateMenu() {
 }
 
 void GoogleKeepSyncPlugin::ShowConfigDialog() {
-    // Create and show configuration dialog
-    // Would use CreateDialog or DialogBox
-    // For now, show simple message box
-    std::wstring message = L"Configuration dialog would show here.\n\n"
-                          L"Email: " + m_config.clientId + L"\n"
-                          L"Auto-sync: " + (m_config.autoSyncEnabled ? std::wstring(L"Enabled") : std::wstring(L"Disabled"));
-    MessageBoxW(m_hwndNpp, 
-                message.c_str(),
-                L"Google Keep Sync Configuration",
-                MB_OK);
+    ConfigDialog dlg(g_hInstance, m_hwndNpp, m_config);
+    dlg.Show();
 }
 
 void GoogleKeepSyncPlugin::UpdateMenuState() {

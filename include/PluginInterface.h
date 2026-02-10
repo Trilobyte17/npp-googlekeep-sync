@@ -84,8 +84,8 @@ struct NoteMapping {
 // Plugin configuration
 struct PluginConfig {
     BOOL autoSyncEnabled;
-    std::wstring clientId;      // Email address
-    std::wstring clientSecret;  // App Password
+    std::wstring email;          // Google account email
+    std::wstring appPassword;    // Google App Password (16-char)
     std::wstring defaultNoteTitle;
     BOOL syncFileMetadata;
     BOOL createLabels;
