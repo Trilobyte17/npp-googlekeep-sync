@@ -18,6 +18,45 @@ GoogleKeepSyncPlugin& GoogleKeepSyncPlugin::Instance() {
     return instance;
 }
 
+// Helper function to extract value from JSON response
+std::string extractJsonValue(const std::string& json, const std::string& key) {
+    std::string search = "\"" + key + "\"";
+    size_t pos = json.find(search);
+    if (pos == std::string::npos) {
+        // Try with : delimiter
+        search = "\"" + key + "\":";
+        pos = json.find(search);
+        if (pos == std::string::npos) return "";
+    }
+    
+    size_t valuePos = json.find(":", pos);
+    if (valuePos == std::string::npos) return "";
+    valuePos++;
+    
+    // Skip whitespace
+    while (valuePos < json.size() && json[valuePos] == ' ') valuePos++;
+    if (valuePos >= json.size()) return "";
+    
+    // Check for string value
+    if (json[valuePos] == '"') {
+        valuePos++;
+        size_t endPos = json.find("\"", valuePos);
+        if (endPos == std::string::npos) return "";
+        return json.substr(valuePos, endPos - valuePos);
+    }
+    
+    // Check for numeric/boolean value
+    size_t endPos = valuePos;
+    while (endPos < json.size() && json[endPos] != ',' && json[endPos] != '}' && json[endPos] != ']') {
+        endPos++;
+    }
+    std::string value = json.substr(valuePos, endPos - valuePos);
+    // Trim whitespace
+    while (!value.empty() && value[0] == ' ') value.erase(0, 1);
+    while (!value.empty() && value[value.size()-1] == ' ') value.erase(value.size()-1);
+    return value;
+}
+
 // FileSyncManager implementation
 FileSyncManager::FileSyncManager() : m_autoSyncEnabled(TRUE) {}
 

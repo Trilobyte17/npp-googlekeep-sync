@@ -10,7 +10,7 @@
 
 // Plugin constants
 #define PLUGIN_NAME           L"GoogleKeepSync"
-#define PLUGIN_VERSION        L"1.0.0"
+#define PLUGIN_VERSION        L"2.0.0"
 #define PLUGIN_CONFIG_FILE    L"GoogleKeepSync.ini"
 
 // Menu command IDs
@@ -28,11 +28,42 @@
 #define NPPM_FILEDDELETED           (NOTEPADPLUS_USER + 33)
 #define NPPM_FILEBEFOREDELETE       (NOTEPADPLUS_USER + 32)
 
-// Plugin message structure
-struct PluginMessage {
-    INT nCmdID;
-    BOOL bEnabled;
-    LPCWSTR pszName;
+// Notification codes (from Notepad++ SDK)
+#define NPPN_FILEBEFORESAVE 2001
+#define NPPN_BUFFERSAVED    2002
+#define NPPN_FILEDELETED    2003
+#define NPPN_FILECLOSED     2004
+#define NPPN_FILEOPENED     2005
+#define NPPN_BUFFERACTIVATED 2008
+
+// Notepad++ data structures (minimal definitions for standalone build)
+struct NppData {
+    HWND _nppHandle;
+    HWND _scintillaMainHandle;
+    HWND _scintillaSecondHandle;
+};
+
+struct SCNotification {
+    HWND _nmhdr_hwndFrom;
+    UINT _nmhdr_idFrom;
+    UINT _nmhdr_code;
+    int _nmmsg;
+    uintptr_t _npParam;
+    const char* _pszText;
+    int _matchBrackets;
+    int _matchBracketsBeginEnd;
+    int _nrChars;
+    BOOL _isModified;
+    int _line;
+    int _firstVisibleLine;
+    int _linesOnScreen;
+    int _curLine;
+    int _curCol;
+    BOOL _LCIsVisible;
+    long long _modificationTypeSerialNumber;
+    int _userActivity;
+    int _isPeekState;
+    void* _data;
 };
 
 // Note sync status
@@ -54,39 +85,13 @@ struct NoteMapping {
 // Plugin configuration
 struct PluginConfig {
     BOOL autoSyncEnabled;
-    std::wstring clientId;      // Reused for email
-    std::wstring clientSecret;  // Reused for app password
+    std::wstring clientId;      // Email address
+    std::wstring clientSecret;  // App Password
     std::wstring defaultNoteTitle;
     BOOL syncFileMetadata;
     BOOL createLabels;
     std::vector<std::wstring> excludedExtensions;
 };
 
-// Note sync status
-enum class SyncStatus {
-    PENDING,
-    SYNCED,
-    FAILED,
-    DISABLED
-};
-
-struct NoteMapping {
-    std::wstring filePath;
-    std::wstring keepNoteId;
-    std::wstring lastSyncHash;
-    SyncStatus status;
-    FILETIME lastSyncTime;
-};
-
-// Plugin configuration
-struct PluginConfig {
-    BOOL autoSyncEnabled;
-    std::wstring clientId;
-    std::wstring clientSecret;
-    std::wstring accessToken;
-    std::wstring refreshToken;
-    std::wstring defaultNoteTitle;
-    BOOL syncFileMetadata;
-    BOOL createLabels;
-    std::vector<std::wstring> excludedExtensions;
-};
+// Helper function for JSON extraction
+std::string extractJsonValue(const std::string& json, const std::string& key);
