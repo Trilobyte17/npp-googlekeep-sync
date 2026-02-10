@@ -4,7 +4,7 @@
 #pragma once
 
 #include "PluginInterface.h"
-#include "gkeep_bridge/PythonBridge.h"
+#include "PythonBridge.h"
 #include <thread>
 #include <mutex>
 #include <queue>
