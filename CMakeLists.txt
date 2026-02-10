@@ -19,6 +19,10 @@ if(MSVC)
         /permissive-
         /MP
     )
+    # Force Unicode character set (required for Notepad++)
+    add_compile_options(/utf-8)
+    add_definitions(-DUNICODE -D_UNICODE)
+    set(CMAKE_UNICODE_DEFINITIONS UNICODE _UNICODE)
 endif()
 
 # Source files
