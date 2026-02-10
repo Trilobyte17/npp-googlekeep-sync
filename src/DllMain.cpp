@@ -50,59 +50,19 @@ BOOL APIENTRY DllMain(HINSTANCE hInstance, DWORD reason, LPVOID lpReserved) {
     return TRUE;
 }
 
-// Notepad++ Plugin Interface Functions - exported with extern "C" and __declspec(dllexport)
+// Notepad++ Plugin Interface Functions - all exported with extern "C" and __declspec(dllexport)
 extern "C" {
-
-// Forward declaration
-LONGLONG APIENTRY beNotified(SCNotification* notifyCode);
-
-BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-        case WM_NOTIFY:
-            if (lParam) {
-                SCNotification* notify = (SCNotification*)lParam;
-                beNotified(notify);
-            }
-            break;
-    }
-    return TRUE;
-}
-
-LONGLONG APIENTRY beNotified(SCNotification* notifyCode) {
-    if (!notifyCode) return 0;
-    
-    // Handle Notepad++ Notifications
-    if (notifyCode->nmhdr.code >= NPPN_FILEBEFORESAVE && 
-        notifyCode->nmhdr.code <= NPPN_FILECLOSED + 100) {
-        // Get file path from Notepad++ via message
-        wchar_t filePath[MAX_PATH] = {0};
-        ::SendMessage(g_hwndNpp, NPPM_GETFULLCURRENTPATH, MAX_PATH, (LPARAM)filePath);
-        
-        switch (notifyCode->nmhdr.code) {
-            case NPPN_FILEBEFORESAVE:
-                GoogleKeepSyncPlugin::Instance().OnFileBeforeSave(filePath);
-                break;
-            case NPPN_BUFFERSAVED:
-                GoogleKeepSyncPlugin::Instance().OnFileSaved(filePath);
-                break;
-            case NPPN_BUFFERACTIVATED:
-                GoogleKeepSyncPlugin::Instance().OnBufferActivated(filePath);
-                break;
-            case NPPN_FILECLOSED:
-                GoogleKeepSyncPlugin::Instance().OnFileClosed(filePath);
-                break;
-        }
-    }
-    
-    return 0;
-}
 
 __declspec(dllexport) BOOL APIENTRY isUnicode() {
     return TRUE;
 }
 
 __declspec(dllexport) CONST WCHAR* APIENTRY getName() {
-    return GoogleKeepSyncPlugin::Instance().GetName();
+    return PLUGIN_NAME;
+}
+
+__declspec(dllexport) CONST WCHAR* APIENTRY getVersion() {
+    return PLUGIN_VERSION;
 }
 
 __declspec(dllexport) VOID APIENTRY setInfo(NppData notepadPlusData) {
@@ -111,14 +71,48 @@ __declspec(dllexport) VOID APIENTRY setInfo(NppData notepadPlusData) {
     GoogleKeepSyncPlugin::Instance().Init(g_hInstance, g_hwndNpp);
 }
 
-__declspec(dllexport) CONST WCHAR* APIENTRY getFuncsArray(INT* nbF) {
-    *nbF = NB_FUNC;
-    return (WCHAR*)g_funcItems;
+__declspec(dllexport) FuncItem* APIENTRY getFuncsArray(INT* nbFunc) {
+    *nbFunc = NB_FUNC;
+    return g_funcItems;
 }
 
-// Alias for compatibility
-__declspec(dllexport) LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode) {
-    return beNotified(notifyCode);
+__declspec(dllexport) BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam) {
+    return TRUE;
+}
+
+__declspec(dllexport) LONGLONG APIENTRY beNotified(SCNotification* notifyCode) {
+    if (!notifyCode) return 0;
+    
+    // Handle Notepad++ Notifications
+    switch (notifyCode->nmhdr.code) {
+        case NPPN_FILEBEFORESAVE:
+        case NPPN_BUFFERSAVED:
+        case NPPN_FILEOPENED:
+        case NPPN_BUFFERACTIVATED:
+        case NPPN_FILECLOSED: {
+            // Get file path from Notepad++ via message
+            wchar_t filePath[MAX_PATH] = {0};
+            ::SendMessage(g_hwndNpp, NPPM_GETFULLCURRENTPATH, MAX_PATH, (LPARAM)filePath);
+            
+            switch (notifyCode->nmhdr.code) {
+                case NPPN_FILEBEFORESAVE:
+                    GoogleKeepSyncPlugin::Instance().OnFileBeforeSave(filePath);
+                    break;
+                case NPPN_BUFFERSAVED:
+                    GoogleKeepSyncPlugin::Instance().OnFileSaved(filePath);
+                    break;
+                case NPPN_BUFFERACTIVATED:
+                    GoogleKeepSyncPlugin::Instance().OnBufferActivated(filePath);
+                    break;
+                case NPPN_FILECLOSED:
+                    GoogleKeepSyncPlugin::Instance().OnFileClosed(filePath);
+                    break;
+            }
+            break;
+        }
+    }
+    
+    return 0;
 }
 
 } // extern "C"
