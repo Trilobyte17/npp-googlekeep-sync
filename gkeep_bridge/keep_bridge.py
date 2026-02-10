@@ -11,8 +11,9 @@ from typing import Dict, List, Optional, Any
 try:
     import gkeepapi
     from gkeepapi.exception import LoginException
+    from gpsoauth import perform_master_login
 except ImportError:
-    print(json.dumps({"error": "gkeepapi not installed. Run: pip install gkeepapi"}), file=sys.stderr)
+    print(json.dumps({"error": "gkeepapi and gpsoauth required. Run: pip install gkeepapi gpsoauth"}), file=sys.stderr)
     sys.exit(1)
 
 
@@ -25,7 +26,8 @@ class KeepBridge:
         self.auth_file = self.config_dir / "auth.json"
         self.state_file = self.config_dir / "state.bin"
         self.email: Optional[str] = None
-        self.app_password: Optional[str] = None
+        self.master_token: Optional[str] = None
+        self.device_id: Optional[str] = None
         
     def _get_config_dir(self) -> Path:
         """Get configuration directory for storing auth data."""
@@ -46,9 +48,8 @@ class KeepBridge:
                 with open(self.auth_file, 'r') as f:
                     auth_data = json.load(f)
                     self.email = auth_data.get('email')
-                    encoded_pass = auth_data.get('app_password')
-                    if encoded_pass:
-                        self.app_password = base64.b64decode(encoded_pass.encode()).decode()
+                    self.master_token = auth_data.get('master_token')
+                    self.device_id = auth_data.get('device_id')
                     return True
             return False
         except Exception:
@@ -56,7 +57,11 @@ class KeepBridge:
     
     def _save_auth(self) -> bool:
         try:
-            auth_data = {'email': self.email, 'app_password': base64.b64encode(self.app_password.encode()).decode() if self.app_password else None}
+            auth_data = {
+                'email': self.email,
+                'master_token': self.master_token,
+                'device_id': self.device_id
+            }
             with open(self.auth_file, 'w') as f:
                 json.dump(auth_data, f)
             return True
@@ -84,12 +89,25 @@ class KeepBridge:
         app_password = params.get('app_password')
         if not email or not app_password:
             return {"success": False, "error": "Email and app_password required"}
+        
         try:
             self.email = email
-            self.app_password = app_password
-            self.keep.authenticate(email, app_password)
+            
+            # Use gpsoauth to get master token
+            result = perform_master_login(email, app_password, "npp-keep-sync")
+            
+            if 'Token' not in result:
+                return {"success": False, "error": f"Authentication failed: {result.get('Error', 'Unknown error')}"}
+            
+            self.master_token = result['Token']
+            self.device_id = result.get('Auth', '').split('=')[1] if '=' in result.get('Auth', '') else None
+            
+            # Use the master token with gkeepapi
+            self.keep.authenticate(email, self.master_token, self.device_id)
+            
             self._save_auth()
             self._save_state()
+            
             return {"success": True, "message": "Login successful", "email": email}
         except LoginException as e:
             return {"success": False, "error": f"Login failed: {str(e)}"}
@@ -107,7 +125,7 @@ class KeepBridge:
         except Exception:
             # Try re-authenticating on sync failure
             try:
-                self.keep.authenticate(self.email, self.app_password)
+                self.keep.authenticate(self.email, self.master_token, self.device_id)
                 self.keep.sync()
                 self._save_state()
                 return {"success": True, "message": "Sync completed after re-auth"}
