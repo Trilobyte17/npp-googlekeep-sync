@@ -2,7 +2,6 @@
 // ARM64 Windows Compatible
 
 #include <windows.h>
-#include <commctrl.h>
 
 // Version information
 VS_VERSION_INFO VERSIONINFO
