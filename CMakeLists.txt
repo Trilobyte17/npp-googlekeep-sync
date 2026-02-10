@@ -20,6 +20,7 @@ set(SOURCES
     src/PluginCore.cpp
     src/ConfigDialog.cpp
     gkeep_bridge/PythonBridge.cpp
+    resource.rc
 )
 
 # Header files
