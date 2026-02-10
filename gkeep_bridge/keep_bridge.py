@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 try:
     import gkeepapi
     from gkeepapi.exception import LoginException
-    from gpsoauth import perform_master_login
+    from gpsoauth import perform_master_login, exchange_token
 except ImportError:
     print(json.dumps({"error": "gkeepapi and gpsoauth required. Run: pip install gkeepapi gpsoauth"}), file=sys.stderr)
     sys.exit(1)
@@ -19,6 +19,9 @@ except ImportError:
 
 class KeepBridge:
     """Bridge between Notepad++ plugin and Google Keep API."""
+    
+    # Default Android ID for Google Keep
+    ANDROID_ID = "ae7d752d1764a7b6"
     
     def __init__(self):
         self.keep = gkeepapi.Keep()
@@ -93,16 +96,30 @@ class KeepBridge:
         try:
             self.email = email
             
-            # Use gpsoauth to get master token
-            result = perform_master_login(email, app_password, "npp-keep-sync")
+            # Step 1: Exchange credentials for master token
+            # Use app password with exchange_token
+            android_id = params.get('android_id', self.ANDROID_ID)
             
-            if 'Token' not in result:
-                return {"success": False, "error": f"Authentication failed: {result.get('Error', 'Unknown error')}"}
+            # Get master token from exchange
+            master_response = exchange_token(email, app_password, android_id)
+            if 'Token' not in master_response:
+                return {"success": False, "error": f"Failed to get master token: {master_response.get('Error', 'Unknown error')}"}
             
-            self.master_token = result['Token']
-            self.device_id = result.get('Auth', '').split('=')[1] if '=' in result.get('Auth', '') else None
+            self.master_token = master_response['Token']
             
-            # Use the master token with gkeepapi
+            # Step 2: Use master token to login
+            login_response = perform_master_login(email, self.master_token, android_id)
+            if 'Auth' not in login_response:
+                return {"success": False, "error": f"Login failed: {login_response.get('Error', 'Unknown error')}"}
+            
+            # Extract device_id from Auth response (format: "DeviceID=xxxx")
+            auth = login_response.get('Auth', '')
+            if '=' in auth:
+                self.device_id = auth.split('=')[1]
+            else:
+                self.device_id = android_id
+            
+            # Step 3: Authenticate with gkeepapi
             self.keep.authenticate(email, self.master_token, self.device_id)
             
             self._save_auth()
