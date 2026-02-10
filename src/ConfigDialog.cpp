@@ -1,6 +1,10 @@
 // Configuration Dialog Implementation
 // ARM64 Windows Compatible
 
+// Notepad++ requires Unicode
+#define UNICODE
+#define _UNICODE
+
 #include "../include/ConfigDialog.h"
 #include "../include/PluginCore.h"
 #include <commctrl.h>

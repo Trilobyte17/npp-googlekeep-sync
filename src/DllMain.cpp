@@ -1,6 +1,10 @@
 // DLL Entry Point for Notepad++ Google Keep Sync Plugin
 // ARM64 Windows Compatible
 
+// Notepad++ requires Unicode
+#define UNICODE
+#define _UNICODE
+
 #include "../include/PluginCore.h"
 #include "../include/PluginInterface.h"
 
