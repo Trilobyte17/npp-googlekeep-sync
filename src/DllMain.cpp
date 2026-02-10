@@ -50,27 +50,29 @@ BOOL APIENTRY DllMain(HINSTANCE hInstance, DWORD reason, LPVOID lpReserved) {
     return TRUE;
 }
 
-// Notepad++ Plugin Interface Functions - implementations
-BOOL APIENTRY isUnicode() {
+// Notepad++ Plugin Interface Functions - exported with extern "C" and __declspec(dllexport)
+extern "C" {
+
+__declspec(dllexport) BOOL APIENTRY isUnicode() {
     return TRUE;
 }
 
-CONST WCHAR* APIENTRY getName() {
+__declspec(dllexport) CONST WCHAR* APIENTRY getName() {
     return GoogleKeepSyncPlugin::Instance().GetName();
 }
 
-VOID APIENTRY setInfo(NppData notepadPlusData) {
+__declspec(dllexport) VOID APIENTRY setInfo(NppData notepadPlusData) {
     g_nppData = notepadPlusData;
     g_hwndNpp = notepadPlusData._nppHandle;
     GoogleKeepSyncPlugin::Instance().Init(g_hInstance, g_hwndNpp);
 }
 
-CONST WCHAR* APIENTRY getFuncsArray(INT* nbF) {
+__declspec(dllexport) CONST WCHAR* APIENTRY getFuncsArray(INT* nbF) {
     *nbF = NB_FUNC;
     return (WCHAR*)g_funcItems;
 }
 
-BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam) {
+__declspec(dllexport) BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
         case WM_NOTIFY:
             if (lParam) {
@@ -82,7 +84,7 @@ BOOL APIENTRY messageProc(UINT msg, WPARAM wParam, LPARAM lParam) {
     return TRUE;
 }
 
-LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode) {
+__declspec(dllexport) LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode) {
     if (!notifyCode) return 0;
     
     // Handle Notepad++ Notifications
@@ -110,3 +112,5 @@ LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode) {
     
     return 0;
 }
+
+} // extern "C"
