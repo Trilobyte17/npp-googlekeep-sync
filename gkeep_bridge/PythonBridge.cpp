@@ -1,9 +1,5 @@
 // PythonBridge - C++ to Python bridge for Google Keep integration
 
-// Notepad++ requires Unicode
-#define UNICODE
-#define _UNICODE
-
 #include "PythonBridge.h"
 #include <windows.h>
 #include <sstream>

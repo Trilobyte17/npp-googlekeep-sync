@@ -2,10 +2,6 @@
 // ARM64 Windows Compatible
 // Updated to use PythonBridge instead of GoogleKeepClient/OAuth
 
-// Notepad++ requires Unicode
-#define UNICODE
-#define _UNICODE
-
 #include "../include/PluginCore.h"
 #include "../include/PluginInterface.h"
 #include <wincrypt.h>

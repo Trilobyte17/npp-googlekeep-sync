@@ -9,11 +9,9 @@ set(CMAKE_SYSTEM_PROCESSOR ARM64)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# MSVC compiler settings - Unicode/ANSI compatibility
+# MSVC compiler settings - Unicode
 if(MSVC)
-    add_compile_options(/W4 /WX- /EHsc /Zc:__cplusplus /permissive- /MP)
-    # Force Unicode character set for Notepad++ compatibility
-    add_compile_options(/utf-8)
+    add_compile_options(/W4 /WX- /EHsc /Zc:__cplusplus /permissive- /MP /utf-8)
 endif()
 
 # Source files
@@ -41,17 +39,14 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/Notepad_plus/include/PluginInterface.h")
     file(DOWNLOAD 
         "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/PluginInterface.h"
         "${CMAKE_SOURCE_DIR}/Notepad_plus/include/PluginInterface.h"
-        STATUS download_status
     )
     file(DOWNLOAD 
         "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/Scintilla.h"
         "${CMAKE_SOURCE_DIR}/Notepad_plus/include/Scintilla.h"
-        STATUS download_status2
     )
     file(DOWNLOAD 
         "https://raw.githubusercontent.com/notepad-plus-plus/notepad-plus-plus/master/PowerEditor/src/Misc/Notepad_plus/include/Notepad_plus.h"
         "${CMAKE_SOURCE_DIR}/Notepad_plus/include/Notepad_plus.h"
-        STATUS download_status3
     )
 endif()
 
@@ -61,28 +56,13 @@ target_compile_definitions(GoogleKeepSync PRIVATE UNICODE _UNICODE)
 # Include directories
 target_include_directories(GoogleKeepSync PRIVATE 
     include
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/Notepad_plus/include
     gkeep_bridge
+    ${CMAKE_SOURCE_DIR}/Notepad_plus/include
 )
 
 # Link Windows libraries
 target_link_libraries(GoogleKeepSync PRIVATE
-    kernel32
-    user32
-    gdi32
-    winspool
-    comdlg32
-    advapi32
-    shell32
-    ole32
-    oleaut32
-    uuid
-    odbc32
-    odbccp32
-    winhttp
-    crypt32
-    ws2_32
+    kernel32 user32 gdi32 winspool comdlg32 advapi32 shell32 ole32 oleaut32 uuid odbc32 odbccp32 winhttp crypt32 ws2_32
 )
 
 # Set output name
@@ -92,15 +72,6 @@ set_target_properties(GoogleKeepSync PROPERTIES
     SUFFIX ".dll"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
-
-# Copy to dist directory for testing
-add_custom_command(TARGET GoogleKeepSync POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/dist/plugins/GoogleKeepSync"
-    COMMAND ${CMAKE_COMMAND} -E copy 
-        "$<TARGET_FILE:GoogleKeepSync>"
-        "${CMAKE_SOURCE_DIR}/dist/plugins/GoogleKeepSync/"
-    COMMENT "Copying plugin to distribution directory"
 )
 
 # Package configuration
