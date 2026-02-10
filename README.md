@@ -1,19 +1,62 @@
 # Google Keep Sync Plugin for Notepad++ (ARM64)
 
-A Notepad++ plugin for Windows ARM64 that syncs file contents to Google Keep notes using your Google account.
+A Notepad++ plugin for Windows ARM64 that syncs file contents to Google Keep notes.
 
-## Features
+## ⚠️ Authentication Notice
 
-- **Auto-Sync on Save**: Automatically syncs file contents to Google Keep when you save
-- **App Password Authentication**: Simple email + 16-char app password (no OAuth complexity)
-- **ARM64 Optimized**: Built specifically for ARM64 Windows
+**Google has deprecated app password authentication for Keep API** (since January 2025). The login functionality may not work for personal Gmail accounts.
+
+**Current Status:**
+- `gpsoauth` library may fail with "BadAuthentication" errors
+- This affects all third-party Keep API clients
+- Google OAuth requires Workspace/Enterprise accounts
+
+## Workaround: Use a Cached Master Token
+
+If you can obtain a valid master token from another device or at a different time, you can use it:
+
+1. Get a master token using Docker (requires different network/location):
+   ```bash
+   docker run --rm -it --entrypoint /bin/sh python:3 -c '
+   pip install gpsoauth
+   python3 -c "
+   from gpsoauth import exchange_token, perform_master_login
+   email = input(\"Email: \")
+   app_password = input(\"App Password: \")
+   android_id = \"ae7d752d1764a7b6\"
+   master = exchange_token(email, app_password, android_id)
+   print(\"Master Token:\", master.get(\"Token\", master.get(\"Error\")))
+   "
+   '
+   ```
+
+2. Use the token manually:
+   ```bash
+   python -c "
+   import json
+   import sys
+   sys.path.insert(0, 'C:/Program Files/Notepad++/plugins/GoogleKeepSync')
+   from keep_bridge import KeepBridge
+   bridge = KeepBridge()
+   result = bridge.handle_set_token({
+       'email': 'your.email@gmail.com',
+       'master_token': 'your-master-token-here',
+       'device_id': 'ae7d752d1764a7b6'
+   })
+   print(json.dumps(result, indent=2))
+   "
+   ```
+
+3. Once token is saved, restart Notepad++ - the plugin will use the cached token
 
 ## Prerequisites
 
 1. **Notepad++ v8.0+** (ARM64 build)
 2. **Windows 11/10 ARM64**
-3. **Python 3.7+** with `gkeepapi` installed
-4. **Google App Password** (see Setup section)
+3. **Python 3.7+** with dependencies:
+   ```
+   pip install gkeepapi gpsoauth
+   ```
 
 ## Installation
 
@@ -21,50 +64,19 @@ A Notepad++ plugin for Windows ARM64 that syncs file contents to Google Keep not
    ```
    %LOCALAPPDATA%\Programs\Notepad++\plugins\GoogleKeepSync\
    ```
-2. Install Python dependency: `pip install gkeepapi`
+2. Install Python dependencies
 3. Restart Notepad++
-
-## Setup: Generate App Password
-
-1. Enable 2FA: https://myaccount.google.com/security
-2. Generate password: https://myaccount.google.com/apppasswords
-3. Copy the 16-character password
 
 ## Configuration
 
-1. **Plugins** → **Google Keep Sync** → **Configure...**
-2. Enter your Gmail email and App Password
-3. Click **Login**
+**Plugins** → **Google Keep Sync** → **Configure...**
 
 ## Security Notes
 
-⚠️ **Important**: The app password is stored in plain text in:
+⚠️ Credentials are stored in:
 ```
 %APPDATA%\Notepad++\plugins\config\GoogleKeepSync.ini
 ```
-
-**Recommendations:**
-1. Use a dedicated Google account for this plugin
-2. Revoke the app password when not using the plugin
-3. Consider the INI file permissions on shared systems
-4. The app password can be revoked anytime at: https://myaccount.google.com/apppasswords
-
-## Usage
-
-- **Sync Now**: Manually sync current file
-- **Toggle Auto-Sync**: Enable/disable auto-sync on save
-- **Configure...**: Login and settings
-- **About**: Plugin info
-
-## Troubleshooting
-
-**Plugin not loading:**
-- Verify ARM64 Notepad++ version
-- Check DLL is in correct plugins folder
-
-**Login fails:**
-- Ensure 2FA is enabled
-- Copy password correctly (includes spaces)
 
 ## License
 

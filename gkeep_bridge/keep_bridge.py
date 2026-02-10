@@ -97,12 +97,17 @@ class KeepBridge:
             self.email = email
             
             # Step 1: Exchange credentials for master token
-            # Use app password with exchange_token
             android_id = params.get('android_id', self.ANDROID_ID)
             
             # Get master token from exchange
             master_response = exchange_token(email, app_password, android_id)
             if 'Token' not in master_response:
+                # Check if we have a cached token we can try
+                if self._load_auth() and self.master_token:
+                    print("Trying cached master token...", file=sys.stderr)
+                    self.keep.authenticate(email, self.master_token, self.device_id)
+                    self._save_state()
+                    return {"success": True, "message": "Login successful (cached token)", "email": email}
                 return {"success": False, "error": f"Failed to get master token: {master_response.get('Error', 'Unknown error')}"}
             
             self.master_token = master_response['Token']
@@ -112,7 +117,7 @@ class KeepBridge:
             if 'Auth' not in login_response:
                 return {"success": False, "error": f"Login failed: {login_response.get('Error', 'Unknown error')}"}
             
-            # Extract device_id from Auth response (format: "DeviceID=xxxx")
+            # Extract device_id from Auth response
             auth = login_response.get('Auth', '')
             if '=' in auth:
                 self.device_id = auth.split('=')[1]
@@ -122,6 +127,7 @@ class KeepBridge:
             # Step 3: Authenticate with gkeepapi
             self.keep.authenticate(email, self.master_token, self.device_id)
             
+            # Save auth for future use
             self._save_auth()
             self._save_state()
             
@@ -130,6 +136,32 @@ class KeepBridge:
             return {"success": False, "error": f"Login failed: {str(e)}"}
         except Exception as e:
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
+    
+    def handle_status(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Check if authenticated and get status."""
+        # Try to load cached auth
+        has_auth = self._load_auth()
+        
+        if has_auth and self.master_token:
+            try:
+                # Try to use cached token
+                if self.email:
+                    self.keep.authenticate(self.email, self.master_token, self.device_id)
+                return {
+                    "authenticated": True,
+                    "email": self.email,
+                    "has_cached_token": True,
+                    "message": "Authenticated (cached token)"
+                }
+            except Exception:
+                pass
+        
+        return {
+            "authenticated": False,
+            "email": self.email,
+            "has_cached_token": has_auth,
+            "message": "Not authenticated"
+        }
     
     def handle_sync(self, params: Dict[str, Any]) -> Dict[str, Any]:
         if not self._load_auth():
@@ -365,16 +397,30 @@ class KeepBridge:
         except Exception as e:
             return {"success": False, "error": f"Failed to update note: {str(e)}"}
     
-    def handle_status(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        has_auth = self._load_auth()
-        has_state = self.state_file.exists()
-        return {
-            "success": True,
-            "authenticated": has_auth,
-            "email": self.email if has_auth else None,
-            "has_sync_state": has_state,
-            "config_dir": str(self.config_dir)
-        }
+    def handle_set_token(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Debug: Manually set master token. Use this if you obtained a token externally."""
+        email = params.get('email')
+        master_token = params.get('master_token')
+        device_id = params.get('device_id', self.ANDROID_ID)
+        
+        if not email or not master_token:
+            return {"success": False, "error": "email and master_token required"}
+        
+        try:
+            self.email = email
+            self.master_token = master_token
+            self.device_id = device_id
+            
+            # Test the token
+            self.keep.authenticate(email, master_token, device_id)
+            
+            # Save
+            self._save_auth()
+            self._save_state()
+            
+            return {"success": True, "message": "Token saved and validated", "email": email}
+        except Exception as e:
+            return {"success": False, "error": f"Token validation failed: {str(e)}"}
     
     def process_command(self, command: Dict[str, Any]) -> Dict[str, Any]:
         cmd = command.get('command')
@@ -387,7 +433,8 @@ class KeepBridge:
             'delete': self.handle_delete,
             'create_note': self.handle_create_note,
             'update_note': self.handle_update_note,
-            'status': self.handle_status
+            'status': self.handle_status,
+            'set_token': self.handle_set_token  # Debug: manually set master token
         }
         handler = handlers.get(cmd)
         if handler:
