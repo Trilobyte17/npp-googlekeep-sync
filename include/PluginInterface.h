@@ -43,14 +43,7 @@ struct NppData {
     HWND _scintillaSecondHandle;
 };
 
-// NMHDR structure (used by SCNotification)
-struct NMHDR {
-    HWND hwndFrom;
-    UINT idFrom;
-    UINT code;
-};
-
-// SCNotification structure
+// SCNotification structure (uses NMHDR from Windows headers)
 struct SCNotification {
     NMHDR nmhdr;
     int _nmmsg;

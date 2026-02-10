@@ -4,6 +4,14 @@
 #include "../include/PluginCore.h"
 #include "../include/PluginInterface.h"
 
+// Notification codes (from Notepad++ SDK)
+#define NPPN_FILEBEFORESAVE 2001
+#define NPPN_BUFFERSAVED    2002
+#define NPPN_FILEDELETED    2003
+#define NPPN_FILEOPENED     2005
+#define NPPN_BUFFERACTIVATED 2008
+#define NPPN_FILECLOSED     2004
+
 // Plugin handle and data
 HINSTANCE g_hInstance = NULL;
 HWND g_hwndNpp = NULL;
@@ -78,14 +86,6 @@ LONGLONG APIENTRY beNotificationProc(SCNotification* notifyCode) {
     if (!notifyCode) return 0;
     
     // Handle Notepad++ Notifications
-    // Notification codes are defined by Notepad++
-    const ULONG NPPN_FILEBEFORESAVE = 2001;
-    const ULONG NPPN_BUFFERSAVED = 2002;
-    const ULONG NPPN_FILEDELETED = 2003;
-    const ULONG NPPN_FILEOPENED = 2005;
-    const ULONG NPPN_BUFFERACTIVATED = 2008;
-    const ULONG NPPN_FILECLOSED = 2004;
-    
     if (notifyCode->nmhdr.code >= NPPN_FILEBEFORESAVE && 
         notifyCode->nmhdr.code <= NPPN_FILECLOSED + 100) {
         // Get file path from Notepad++ via message
