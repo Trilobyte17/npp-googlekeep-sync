@@ -85,7 +85,10 @@ BOOL FileSyncManager::Initialize(const PluginConfig& config) {
     
     // Initialize Python bridge
     if (!m_keepBridge->Initialize(L"python", pythonScript)) {
-        MessageBoxW(NULL, L"Failed to initialize Python bridge for Google Keep sync", L"Error", MB_OK | MB_ICONERROR);
+        std::wstring error = L"Failed to initialize Python bridge:\n" + 
+                            std::wstring(m_keepBridge->GetLastError().begin(), m_keepBridge->GetLastError().end()) +
+                            L"\n\nMake sure Python is in PATH and keep_bridge.py is in the plugin folder.";
+        MessageBoxW(NULL, error.c_str(), L"Python Bridge Error", MB_OK | MB_ICONERROR);
         return FALSE;
     }
     
