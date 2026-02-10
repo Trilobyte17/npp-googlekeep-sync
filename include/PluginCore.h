@@ -9,6 +9,9 @@
 #include <mutex>
 #include <queue>
 
+// Global instance handle (declared in DllMain.cpp)
+extern HINSTANCE g_hInstance;
+
 // Login result structure
 struct LoginResult {
     bool success;
