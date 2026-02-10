@@ -154,11 +154,7 @@ bool PythonBridge::StartPythonProcess()
 
     if (!CreateProcessW(nullptr, &cmdLine[0], nullptr, nullptr, TRUE, 
                         CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
-        DWORD dwErr = GetLastError();
-        char buf[256];
-        sprintf_s(buf, "Failed to create Python process. Error: %lu", dwErr);
-        m_last_error = buf;
-        // Close pipe handles
+        m_last_error = "Failed to create Python process";
         CloseHandle(m_hChildStdInRd);
         CloseHandle(m_hChildStdInWr);
         CloseHandle(m_hChildStdOutRd);
