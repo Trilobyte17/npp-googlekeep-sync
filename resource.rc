@@ -2,6 +2,7 @@
 // ARM64 Windows Compatible
 
 #include <windows.h>
+#include "resource.h"
 
 // Version information
 VS_VERSION_INFO VERSIONINFO
