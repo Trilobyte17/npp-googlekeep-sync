@@ -9,20 +9,11 @@ set(CMAKE_SYSTEM_PROCESSOR ARM64)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# MSVC compiler settings
+# MSVC compiler settings - Unicode/ANSI compatibility
 if(MSVC)
-    add_compile_options(
-        /W4
-        /WX-
-        /EHsc
-        /Zc:__cplusplus
-        /permissive-
-        /MP
-    )
-    # Force Unicode character set (required for Notepad++)
+    add_compile_options(/W4 /WX- /EHsc /Zc:__cplusplus /permissive- /MP)
+    # Force Unicode character set for Notepad++ compatibility
     add_compile_options(/utf-8)
-    add_definitions(-DUNICODE -D_UNICODE)
-    set(CMAKE_UNICODE_DEFINITIONS UNICODE _UNICODE)
 endif()
 
 # Source files
@@ -64,11 +55,15 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/Notepad_plus/include/PluginInterface.h")
     )
 endif()
 
+# Define UNICODE for Notepad++ compatibility
+target_compile_definitions(GoogleKeepSync PRIVATE UNICODE _UNICODE)
+
 # Include directories
 target_include_directories(GoogleKeepSync PRIVATE 
     include
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/Notepad_plus/include
+    gkeep_bridge
 )
 
 # Link Windows libraries
@@ -90,22 +85,6 @@ target_link_libraries(GoogleKeepSync PRIVATE
     ws2_32
 )
 
-# Include gkeep_bridge directory
-target_include_directories(GoogleKeepSync PRIVATE 
-    include
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/Notepad_plus/include
-    gkeep_bridge
-)
-
-# Define UNICODE
-add_definitions(-DUNICODE -D_UNICODE)
-
-# Disable compiler warnings that are not relevant for this project
-if(MSVC)
-    add_compile_options(/wd4996)  # Disable warning about deprecated functions
-endif()
-
 # Set output name
 set_target_properties(GoogleKeepSync PROPERTIES
     OUTPUT_NAME "GoogleKeepSync"
@@ -115,22 +94,13 @@ set_target_properties(GoogleKeepSync PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-# Notepad++ plugin directory (for debugging)
-set(NPP_PLUGIN_DIR "${CMAKE_SOURCE_DIR}/dist" CACHE PATH "Notepad++ plugin directory")
-
-# Copy to Notepad++ directory for testing
+# Copy to dist directory for testing
 add_custom_command(TARGET GoogleKeepSync POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${NPP_PLUGIN_DIR}/plugins/GoogleKeepSync"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/dist/plugins/GoogleKeepSync"
     COMMAND ${CMAKE_COMMAND} -E copy 
         "$<TARGET_FILE:GoogleKeepSync>"
-        "${NPP_PLUGIN_DIR}/plugins/GoogleKeepSync/"
+        "${CMAKE_SOURCE_DIR}/dist/plugins/GoogleKeepSync/"
     COMMENT "Copying plugin to distribution directory"
-)
-
-# Install
-install(TARGETS GoogleKeepSync
-    RUNTIME DESTINATION plugins/GoogleKeepSync
-    LIBRARY DESTINATION plugins/GoogleKeepSync
 )
 
 # Package configuration
