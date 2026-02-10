@@ -55,8 +55,8 @@ target_compile_definitions(GoogleKeepSync PRIVATE UNICODE _UNICODE)
 
 # Include directories
 target_include_directories(GoogleKeepSync PRIVATE 
-    include
-    gkeep_bridge
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/gkeep_bridge
     ${CMAKE_SOURCE_DIR}/Notepad_plus/include
 )
 
