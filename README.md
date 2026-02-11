@@ -1,83 +1,59 @@
-# Google Keep Sync Plugin for Notepad++ (ARM64)
+# ⛔ ARCHIVED - Google Keep Sync Plugin for Notepad++
 
-A Notepad++ plugin for Windows ARM64 that syncs file contents to Google Keep notes.
+> **This project is archived.** Google has deprecated third-party authentication for Google Keep API for personal accounts (since January 2025).
 
-## ⚠️ Authentication Notice
+## Status
 
-**Google has deprecated app password authentication for Keep API** (since January 2025). The login functionality may not work for personal Gmail accounts.
+- ⛔ **No longer maintained**
+- ❌ **Authentication broken** - Google deprecated app password auth for Keep API
+- 📭 **Archived** - No further development planned unless Google restores personal account access
 
-**Current Status:**
-- `gpsoauth` library may fail with "BadAuthentication" errors
-- This affects all third-party Keep API clients
-- Google OAuth requires Workspace/Enterprise accounts
+## What Happened
 
-## Workaround: Use a Cached Master Token
+Google has effectively shut down third-party Keep API access for personal Gmail accounts. Both the `gkeepapi` library and `gpsoauth` authentication method now fail with "BadAuthentication" errors.
 
-If you can obtain a valid master token from another device or at a different time, you can use it:
+This affects:
+- This plugin
+- All apps using `gpsoauth` for Keep API
+- Most third-party Google Keep integrations
 
-1. Get a master token using Docker (requires different network/location):
-   ```bash
-   docker run --rm -it --entrypoint /bin/sh python:3 -c '
-   pip install gpsoauth
-   python3 -c "
-   from gpsoauth import exchange_token, perform_master_login
-   email = input(\"Email: \")
-   app_password = input(\"App Password: \")
-   android_id = \"ae7d752d1764a7b6\"
-   master = exchange_token(email, app_password, android_id)
-   print(\"Master Token:\", master.get(\"Token\", master.get(\"Error\")))
-   "
-   '
-   ```
+## If Google Restores Access
 
-2. Use the token manually:
-   ```bash
-   python -c "
-   import json
-   import sys
-   sys.path.insert(0, 'C:/Program Files/Notepad++/plugins/GoogleKeepSync')
-   from keep_bridge import KeepBridge
-   bridge = KeepBridge()
-   result = bridge.handle_set_token({
-       'email': 'your.email@gmail.com',
-       'master_token': 'your-master-token-here',
-       'device_id': 'ae7d752d1764a7b6'
-   })
-   print(json.dumps(result, indent=2))
-   "
-   ```
+If Google re-enables personal account access to Keep API:
 
-3. Once token is saved, restart Notepad++ - the plugin will use the cached token
+1. The authentication flow would need to be updated to work with the new requirements
+2. Check the [gkeepapi issues](https://github.com/kiwiz/gkeepapi/issues) for updates
+3. This repository can be re-activated if a solution is found
 
-## Prerequisites
+## Original Features (when working)
 
-1. **Notepad++ v8.0+** (ARM64 build)
-2. **Windows 11/10 ARM64**
-3. **Python 3.7+** with dependencies:
-   ```
-   pip install gkeepapi gpsoauth
-   ```
+- Auto-sync files to Google Keep on save
+- App Password authentication (no OAuth complexity)
+- ARM64 Windows optimized
 
-## Installation
+## Installation (historical)
 
 1. Copy `GoogleKeepSync.dll` and `keep_bridge.py` to:
    ```
    %LOCALAPPDATA%\Programs\Notepad++\plugins\GoogleKeepSync\
    ```
-2. Install Python dependencies
+2. Install dependencies: `pip install gkeepapi gpsoauth`
 3. Restart Notepad++
 
-## Configuration
+## For Personal Gmail Users
 
-**Plugins** → **Google Keep Sync** → **Configure...**
+Options if you need Keep + Notepad++ integration:
 
-## Security Notes
-
-⚠️ Credentials are stored in:
-```
-%APPDATA%\Notepad++\plugins\config\GoogleKeepSync.ini
-```
+1. **Google Takeout** - Export Keep notes periodically
+2. **Manual copy/paste** - Use Keep web interface
+3. **Alternative services** - Consider Evernote, OneNote, or Notion
+4. **Enterprise accounts** - Google Workspace accounts may still have Keep API access
 
 ## License
 
-MIT License
+MIT License - See LICENSE file
+
+---
+
+**Archived:** February 2026  
+**Last working commit:** N/A - Authentication was deprecated before full functionality was achieved

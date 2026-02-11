@@ -1,5 +1,5 @@
-// Configuration Dialog Implementation
-// ARM64 Windows Compatible
+// ⛔ ARCHIVED - Configuration Dialog Implementation
+// ARCHIVED: Google deprecated Keep API access for personal accounts (Jan 2025)
 
 #include "../include/ConfigDialog.h"
 #include "../include/PluginCore.h"

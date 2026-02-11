@@ -1,9 +1,7 @@
-// Main Plugin Core Implementation
-// ARM64 Windows Compatible
-// Updated to use PythonBridge instead of GoogleKeepClient/OAuth
+// ⛔ ARCHIVED - Main Plugin Core Implementation
+// ARCHIVED: Google deprecated Keep API access for personal accounts (Jan 2025)
 
 #include "../include/PluginCore.h"
-#include "../include/PluginInterface.h"
 #include "../include/ConfigDialog.h"
 #include <wincrypt.h>
 #include <sstream>

@@ -1,5 +1,6 @@
-// DLL Entry Point for Notepad++ Google Keep Sync Plugin
-// ARM64 Windows Compatible
+// ⛔ ARCHIVED - DLL Entry Point for Notepad++ Google Keep Sync Plugin
+// ARCHIVED: Google deprecated Keep API access for personal accounts (Jan 2025)
+// See README.md for details
 
 #include "../include/PluginCore.h"
 #include "../include/PluginInterface.h"

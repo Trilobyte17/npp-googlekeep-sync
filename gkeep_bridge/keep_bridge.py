@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Google Keep Bridge - Python backend for N++ Google Keep Sync plugin."""
+"""
+⛔ ARCHIVED - Google Keep Bridge for Notepad++ Plugin
+
+ARCHIVED: Google deprecated Keep API access for personal accounts (Jan 2025)
+
+This module provided a bridge between Notepad++ and Google Keep using gkeepapi.
+Authentication is now broken due to Google's deprecation of third-party access.
+"""
 
 import sys
 import os
